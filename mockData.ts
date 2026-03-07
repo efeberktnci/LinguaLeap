@@ -1,0 +1,188 @@
+import {
+  UserProfile,
+  Language,
+  Unit,
+  QuizQuestion,
+  LeaderboardEntry,
+  ShopItem,
+  DailyQuest,
+} from '../types';
+
+export const USER_PROFILE: UserProfile = {
+  id: 'user_001',
+  name: 'Ahmet',
+  username: '@ahmet_dev',
+  avatar: '🦉',
+  level: 12,
+  totalXP: 4873,
+  currentXP: 347,
+  xpToNextLevel: 500,
+  streak: 14,
+  longestStreak: 21,
+  hearts: 4,
+  maxHearts: 5,
+  gems: 234,
+  crowns: 18,
+  league: 'Obsidian',
+  leagueRank: 3,
+  joinDate: '2024-09-15',
+  coursesActive: ['en_tr', 'de_tr'],
+  achievements: [
+    { id: 'ach_1', icon: '🔥', title: 'Ateş Başlangıcı', unlocked: true },
+    { id: 'ach_2', icon: '⚡', title: 'Durdurulamaz', unlocked: true },
+    { id: 'ach_3', icon: '🏆', title: 'Demir İrade', unlocked: false },
+    { id: 'ach_4', icon: '💎', title: 'XP Avcısı', unlocked: true },
+    { id: 'ach_5', icon: '🎯', title: 'Kusursuz Atış', unlocked: true },
+    { id: 'ach_6', icon: '📚', title: 'Kitap Kurdu', unlocked: false },
+    { id: 'ach_7', icon: '🌟', title: 'İlk Zafer', unlocked: true },
+    { id: 'ach_8', icon: '🦁', title: 'Korkusuz', unlocked: true },
+  ],
+  weeklyXP: [
+    { day: 'Pzt', xp: 42 },
+    { day: 'Sal', xp: 85 },
+    { day: 'Çar', xp: 37 },
+    { day: 'Per', xp: 63 },
+    { day: 'Cum', xp: 91 },
+    { day: 'Cmt', xp: 48 },
+    { day: 'Paz', xp: 0 },
+  ],
+  dailyGoal: 50,
+  dailyXPEarned: 35,
+};
+
+export const LANGUAGES: Language[] = [
+  { id: 'en', name: 'İngilizce', flag: '🇬🇧', progress: 0.42 },
+  { id: 'de', name: 'Almanca', flag: '🇩🇪', progress: 0.15 },
+  { id: 'fr', name: 'Fransızca', flag: '🇫🇷', progress: 0 },
+  { id: 'es', name: 'İspanyolca', flag: '🇪🇸', progress: 0 },
+  { id: 'it', name: 'İtalyanca', flag: '🇮🇹', progress: 0 },
+  { id: 'ja', name: 'Japonca', flag: '🇯🇵', progress: 0 },
+  { id: 'ko', name: 'Korece', flag: '🇰🇷', progress: 0 },
+  { id: 'pt', name: 'Portekizce', flag: '🇧🇷', progress: 0 },
+];
+
+export const UNITS: Unit[] = [
+  {
+    id: 'unit_1',
+    title: 'Temel Kalıplar',
+    description: 'Selamlaşma ve tanışma',
+    color: '#58CC02',
+    shadowColor: '#46A302',
+    icon: '👋',
+    completed: true,
+    lessons: [
+      { id: 'lesson_1_1', type: 'star', title: 'Selamlar', completed: true, crowns: 3, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_1_2', type: 'book', title: 'Tanışma', completed: true, crowns: 2, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_1_3', type: 'star', title: 'Hoşça kal', completed: true, crowns: 1, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_1_4', type: 'trophy', title: 'Ünite Testi', completed: true, crowns: 1, maxCrowns: 1, xpReward: 25 },
+    ],
+  },
+  {
+    id: 'unit_2',
+    title: 'Yiyecek & İçecek',
+    description: 'Restoranda sipariş verme',
+    color: '#CE82FF',
+    shadowColor: '#A855F7',
+    icon: '🍕',
+    completed: true,
+    lessons: [
+      { id: 'lesson_2_1', type: 'star', title: 'Meyveler', completed: true, crowns: 5, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_2_2', type: 'book', title: 'İçecekler', completed: true, crowns: 3, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_2_3', type: 'star', title: 'Restoran', completed: true, crowns: 2, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_2_4', type: 'dumbbell', title: 'Pratik', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_2_5', type: 'trophy', title: 'Ünite Testi', completed: false, crowns: 0, maxCrowns: 1, xpReward: 25 },
+    ],
+  },
+  {
+    id: 'unit_3',
+    title: 'Aile & İlişkiler',
+    description: 'Aile bireylerini tanıtma',
+    color: '#FF9600',
+    shadowColor: '#CC7A00',
+    icon: '👨‍👩‍👧‍👦',
+    completed: false,
+    lessons: [
+      { id: 'lesson_3_1', type: 'star', title: 'Aile', completed: true, crowns: 1, maxCrowns: 5, xpReward: 10 },
+      { id: 'lesson_3_2', type: 'book', title: 'Arkadaşlar', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, current: true },
+      { id: 'lesson_3_3', type: 'star', title: 'Duygular', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_3_4', type: 'dumbbell', title: 'Pratik', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_3_5', type: 'trophy', title: 'Ünite Testi', completed: false, crowns: 0, maxCrowns: 1, xpReward: 25, locked: true },
+    ],
+  },
+  {
+    id: 'unit_4',
+    title: 'Seyahat',
+    description: 'Yön sorma ve ulaşım',
+    color: '#1CB0F6',
+    shadowColor: '#0A8FD4',
+    icon: '✈️',
+    completed: false,
+    lessons: [
+      { id: 'lesson_4_1', type: 'star', title: 'Ulaşım', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_4_2', type: 'book', title: 'Yönler', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_4_3', type: 'star', title: 'Otel', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_4_4', type: 'trophy', title: 'Ünite Testi', completed: false, crowns: 0, maxCrowns: 1, xpReward: 25, locked: true },
+    ],
+  },
+  {
+    id: 'unit_5',
+    title: 'Alışveriş',
+    description: 'Mağazada iletişim',
+    color: '#FF4B4B',
+    shadowColor: '#CC3B3B',
+    icon: '🛍️',
+    completed: false,
+    lessons: [
+      { id: 'lesson_5_1', type: 'star', title: 'Renkler', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_5_2', type: 'book', title: 'Kıyafetler', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_5_3', type: 'star', title: 'Fiyatlar', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_5_4', type: 'dumbbell', title: 'Pratik', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
+      { id: 'lesson_5_5', type: 'trophy', title: 'Ünite Testi', completed: false, crowns: 0, maxCrowns: 1, xpReward: 25, locked: true },
+    ],
+  },
+];
+
+export const QUIZ_QUESTIONS: Record<string, QuizQuestion[]> = {
+  lesson_3_2: [
+    { id: 'q1', type: 'translate', question: '"Friend" kelimesini Türkçeye çevirin', prompt: 'Friend', options: ['Arkadaş', 'Kardeş', 'Anne', 'Aile'], correctAnswer: 'Arkadaş', xp: 10 },
+    { id: 'q2', type: 'select', question: 'Doğru çeviriyi seçin:', prompt: 'My best friend', options: ['En iyi arkadaşım', 'Arkadaşlarım', 'İyi arkadaş', 'Eski arkadaşım'], correctAnswer: 'En iyi arkadaşım', xp: 10 },
+    { id: 'q3', type: 'translate', question: 'Bu cümleyi Türkçeye çevirin:', prompt: 'She is my friend', options: ['O benim arkadaşım', 'O senin arkadaşın', 'Onlar arkadaş', 'Ben arkadaşım'], correctAnswer: 'O benim arkadaşım', xp: 10 },
+    { id: 'q4', type: 'fillBlank', question: 'Boşluğu doldurun:', sentence: 'He is my ___ friend.', options: ['best', 'good', 'well', 'fine'], correctAnswer: 'best', xp: 10 },
+    { id: 'q5', type: 'listen', question: 'Ne duyuyorsunuz?', audioText: 'Nice to meet you', options: ['Nice to meet you', 'Nice to see you', 'Glad to meet you', 'How are you'], correctAnswer: 'Nice to meet you', xp: 10 },
+    { id: 'q6', type: 'translate', question: 'Çevirin:', prompt: 'We are friends', options: ['Biz arkadaşız', 'Onlar arkadaş', 'Sen arkadaşsın', 'Ben arkadaşım'], correctAnswer: 'Biz arkadaşız', xp: 10 },
+    { id: 'q7', type: 'select', question: '"Komşu" kelimesinin İngilizcesi nedir?', prompt: 'Komşu', options: ['Neighbor', 'Friend', 'Brother', 'Teacher'], correctAnswer: 'Neighbor', xp: 10 },
+    { id: 'q8', type: 'fillBlank', question: 'Boşluğu doldurun:', sentence: 'They are good ___.', options: ['friends', 'friend', 'friendly', 'friendship'], correctAnswer: 'friends', xp: 10 },
+    { id: 'q9', type: 'translate', question: 'Çevirin:', prompt: 'My friends and I', options: ['Arkadaşlarım ve ben', 'Benim arkadaşım', 'Arkadaşlarımız', 'Onun arkadaşları'], correctAnswer: 'Arkadaşlarım ve ben', xp: 15 },
+  ],
+};
+
+export const LEADERBOARD: LeaderboardEntry[] = [
+  { id: '1', name: 'Zeynep', avatar: '👩‍🦰', xp: 1243, league: 'Obsidian' },
+  { id: '2', name: 'Mehmet', avatar: '👨‍🦱', xp: 1187, league: 'Obsidian' },
+  { id: '3', name: 'Ahmet', avatar: '🦉', xp: 1052, isUser: true, league: 'Obsidian' },
+  { id: '4', name: 'Elif', avatar: '👩', xp: 1048, league: 'Obsidian' },
+  { id: '5', name: 'Can', avatar: '👦', xp: 915, league: 'Obsidian' },
+  { id: '6', name: 'Deniz', avatar: '🧑', xp: 876, league: 'Obsidian' },
+  { id: '7', name: 'Selin', avatar: '👧', xp: 831, league: 'Obsidian' },
+  { id: '8', name: 'Burak', avatar: '👨', xp: 744, league: 'Obsidian' },
+  { id: '9', name: 'Ayşe', avatar: '👩‍🦳', xp: 702, league: 'Obsidian' },
+  { id: '10', name: 'Cem', avatar: '🧔', xp: 698, league: 'Obsidian' },
+  { id: '11', name: 'Fatma', avatar: '👵', xp: 571, league: 'Obsidian' },
+  { id: '12', name: 'Kerem', avatar: '👱‍♂️', xp: 523, league: 'Obsidian' },
+  { id: '13', name: 'Merve', avatar: '👩‍🎓', xp: 467, league: 'Obsidian' },
+  { id: '14', name: 'Yusuf', avatar: '🧑‍🦲', xp: 412, league: 'Obsidian' },
+  { id: '15', name: 'Derya', avatar: '👩‍💼', xp: 348, league: 'Obsidian' },
+];
+
+export const SHOP_ITEMS: ShopItem[] = [
+  { id: 'shop_1', name: 'Can Doldur', description: 'Canlarını tekrar doldur', icon: '❤️', price: 350, currency: 'gem' },
+  { id: 'shop_2', name: 'Streak Dondur', description: 'Serini 1 gün koru', icon: '🛡️', price: 200, currency: 'gem' },
+  { id: 'shop_3', name: '2x XP Boost', description: '15 dakika 2x XP kazan', icon: '⚡', price: 100, currency: 'gem' },
+  { id: 'shop_4', name: 'Zamanlı Meydan Okuma', description: '2 dakikada XP topla', icon: '⏱️', price: 0, currency: 'free' },
+];
+
+export const DAILY_QUESTS: DailyQuest[] = [
+  { id: 'dq_1', title: '1 ders tamamla', icon: '📖', progress: 0, target: 1, xpReward: 10, completed: false },
+  { id: 'dq_2', title: '20 XP kazan', icon: '⚡', progress: 35, target: 20, xpReward: 5, completed: true },
+  { id: 'dq_3', title: 'Hatasız ders bitir', icon: '🎯', progress: 0, target: 1, xpReward: 15, completed: false },
+];
