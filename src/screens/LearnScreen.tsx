@@ -9,7 +9,7 @@ import TopBar from '../components/TopBar';
 import UnitHeader from '../components/UnitHeader';
 import LessonNode from '../components/LessonNode';
 
-type LearnNavProp = NativeStackNavigationProp<RootStackParamList, 'HomeTabs'>;
+type LearnNavProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
 
 const LearnScreen: React.FC = () => {
   const navigation = useNavigation<LearnNavProp>();

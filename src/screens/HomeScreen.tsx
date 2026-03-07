@@ -1,31 +1,89 @@
-import React, { useContext } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS, FONTS, SHADOWS } from '../theme/colors';
-import { LANGUAGES } from '../data/mockData';
-import { AppContext } from '../context/AppContext';
-import { useUser } from '../hooks/useUser';
-import { getGreeting } from '../utils/helpers';
-import { RootStackParamList } from '../types';
+import { useUser, useAuth } from '../hooks';
+import { getGreeting, calculateProgress } from '../utils/helpers';
 import ProgressBar from '../components/ProgressBar';
-import DailyQuestCard from '../components/DailyQuestCard';
 import TopBar from '../components/TopBar';
 
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList, 'HomeTabs'>;
+const DAILY_GOAL = 250;
 
-interface Props {
-  navigation: HomeNavProp;
-}
+const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user, uid } = useUser();
+  const { refreshProfile } = useAuth();
 
-const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { user, dailyProgress, levelProgress, dailyGoalReached } = useUser();
-  const { state } = useContext(AppContext);
+  // Ekran her açıldığında profili yenile
+  useEffect(() => {
+    refreshProfile();
+  }, []);
+
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  // XP günlük hedefi geçmesin
+  const cappedDailyXP = Math.min(user.dailyXPEarned, DAILY_GOAL);
+  const dailyProgress = calculateProgress(cappedDailyXP, DAILY_GOAL);
+  const dailyGoalReached = cappedDailyXP >= DAILY_GOAL;
+
+  const levelProgress = calculateProgress(user.currentXP, user.xpToNextLevel);
+
+  // Tamamlanan ders sayısı
+  const completedCount = (user.completedLessons || []).length;
+
+  // Günlük görevler - gerçek veriden hesaplama
+  const quests = [
+    {
+      id: 'dq_1',
+      title: '1 ders tamamla',
+      icon: '📖',
+      progress: Math.min(completedCount, 1),
+      target: 1,
+      xpReward: 10,
+      completed: completedCount >= 1,
+    },
+    {
+      id: 'dq_2',
+      title: `${DAILY_GOAL} XP kazan`,
+      icon: '⚡',
+      progress: Math.min(user.dailyXPEarned, DAILY_GOAL),
+      target: DAILY_GOAL,
+      xpReward: 15,
+      completed: user.dailyXPEarned >= DAILY_GOAL,
+    },
+    {
+      id: 'dq_3',
+      title: 'Hatasız ders bitir',
+      icon: '🎯',
+      progress: 0, // TODO: track perfect lessons
+      target: 1,
+      xpReward: 20,
+      completed: false,
+    },
+  ];
+
+  // Aktif kurslar - gerçek veriden
+  const courses = (user.coursesActive || []).map((courseId: string) => {
+    if (courseId === 'en_tr') {
+      const totalLessons = 23; // toplam ders
+      const done = (user.completedLessons || []).length;
+      const progress = totalLessons > 0 ? Math.min(done / totalLessons, 1) : 0;
+      return { id: 'en', name: 'İngilizce', flag: '🇬🇧', progress };
+    }
+    return { id: courseId, name: courseId, flag: '🌍', progress: 0 };
+  });
 
   return (
     <View style={styles.container}>
       <TopBar />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+        {/* Karsilama */}
         <View style={styles.greetingCard}>
           <View style={styles.greetingLeft}>
             <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -37,16 +95,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Streak */}
         <View style={styles.streakCard}>
           <View style={styles.streakLeft}>
             <Text style={styles.streakFire}>🔥</Text>
             <View>
-              <Text style={styles.streakCount}>{user.streak} günlük seri!</Text>
-              <Text style={styles.streakSub}>En uzun: {user.longestStreak} gün</Text>
+              <Text style={styles.streakCount}>
+                {user.streak > 0 ? `${user.streak} günlük seri!` : 'Seriyi başlat!'}
+              </Text>
+              <Text style={styles.streakSub}>
+                {user.longestStreak > 0 ? `En uzun: ${user.longestStreak} gün` : 'Bugün ilk dersini tamamla'}
+              </Text>
             </View>
           </View>
           <View style={styles.weekDots}>
-            {user.weeklyXP.map((day, index) => (
+            {(user.weeklyXP || []).map((day: any, index: number) => (
               <View key={index} style={styles.dayDot}>
                 <View style={[styles.dot, day.xp > 0 ? styles.dotActive : styles.dotInactive]}>
                   {day.xp > 0 && <Ionicons name="checkmark" size={10} color={COLORS.white} />}
@@ -57,15 +120,17 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Günlük Hedef */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Günlük Hedef</Text>
-            <Text style={styles.sectionBadge}>{user.dailyXPEarned}/{user.dailyGoal} XP</Text>
+            <Text style={styles.sectionBadge}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
           </View>
           <ProgressBar progress={dailyProgress} height={16} color={dailyGoalReached ? '#FFD700' : COLORS.blue} style={{ marginTop: 8 }} />
           {dailyGoalReached && <Text style={styles.goalComplete}>🎉 Günlük hedefe ulaştın!</Text>}
         </View>
 
+        {/* Seviye */}
         <View style={styles.levelCard}>
           <View style={styles.levelRow}>
             <View style={styles.levelBadge}>
@@ -79,35 +144,58 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Aktif Kurslar */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Aktif Kurslar</Text>
           <View style={styles.coursesRow}>
-            {LANGUAGES.filter((l) => l.progress > 0).map((lang) => (
-              <TouchableOpacity key={lang.id} style={styles.courseCard}>
-                <Text style={styles.courseFlag}>{lang.flag}</Text>
-                <Text style={styles.courseName}>{lang.name}</Text>
-                <ProgressBar progress={lang.progress} height={6} color={COLORS.primary} showShadow={false} style={{ marginTop: 8, width: '100%' }} />
-                <Text style={styles.coursePercent}>{Math.round(lang.progress * 100)}%</Text>
+            {courses.map((course: any) => (
+              <TouchableOpacity key={course.id} style={styles.courseCard} onPress={() => navigation.navigate('Learn')}>
+                <Text style={styles.courseFlag}>{course.flag}</Text>
+                <Text style={styles.courseName}>{course.name}</Text>
+                <ProgressBar progress={course.progress} height={6} color={COLORS.primary} showShadow={false} style={{ marginTop: 8, width: '100%' }} />
+                <Text style={styles.coursePercent}>{Math.round(course.progress * 100)}%</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
+        {/* Günlük Görevler */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Günlük Görevler</Text>
-          {state.dailyQuests.map((quest) => (
-            <DailyQuestCard key={quest.id} quest={quest} />
-          ))}
+          {quests.map((quest) => {
+            const questProgress = Math.min(quest.progress / quest.target, 1);
+            return (
+              <View key={quest.id} style={[styles.questCard, quest.completed && styles.questCardDone]}>
+                <View style={styles.questIconWrap}>
+                  <Text style={styles.questIcon}>{quest.icon}</Text>
+                </View>
+                <View style={styles.questContent}>
+                  <Text style={[styles.questTitle, quest.completed && styles.questTitleDone]}>{quest.title}</Text>
+                  <ProgressBar progress={questProgress} height={10} color={quest.completed ? COLORS.primary : COLORS.blue} style={{ marginTop: 6 }} />
+                </View>
+                <View style={styles.questReward}>
+                  {quest.completed ? (
+                    <View style={styles.questCheck}>
+                      <Text style={styles.questCheckText}>✓</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.questXP}>+{quest.xpReward} XP</Text>
+                  )}
+                </View>
+              </View>
+            );
+          })}
         </View>
 
+        {/* Hızlı Başlat */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hızlı Başlat</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.primary }]} onPress={() => navigation.navigate('HomeTabs')}>
+            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.primary }]} onPress={() => navigation.navigate('Learn')}>
               <Ionicons name="play" size={24} color={COLORS.white} />
               <Text style={styles.quickActionText}>Derse Devam Et</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.blue }]}>
+            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.blue }]} onPress={() => navigation.navigate('Learn')}>
               <Ionicons name="refresh" size={24} color={COLORS.white} />
               <Text style={styles.quickActionText}>Tekrar Yap</Text>
             </TouchableOpacity>
@@ -161,6 +249,17 @@ const styles = StyleSheet.create({
   courseFlag: { fontSize: 32 },
   courseName: { fontSize: 14, color: COLORS.owl, ...FONTS.semiBold, marginTop: 6 },
   coursePercent: { fontSize: 12, color: COLORS.wolf, ...FONTS.medium, marginTop: 4 },
+  questCard: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, borderColor: COLORS.swan, marginBottom: 8 },
+  questCardDone: { borderColor: COLORS.primaryBg, backgroundColor: '#F8FFF0' },
+  questIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  questIcon: { fontSize: 20 },
+  questContent: { flex: 1 },
+  questTitle: { fontSize: 14, color: COLORS.eel, ...FONTS.semiBold },
+  questTitleDone: { color: COLORS.primaryDark },
+  questReward: { marginLeft: 12 },
+  questXP: { fontSize: 13, color: COLORS.accent, ...FONTS.bold },
+  questCheck: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  questCheckText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
   quickActions: { flexDirection: 'row', gap: 12 },
   quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, gap: 8, ...SHADOWS.medium },
   quickActionText: { fontSize: 15, color: COLORS.white, ...FONTS.bold },

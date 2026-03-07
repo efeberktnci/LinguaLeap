@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS, FONTS } from '../theme/colors';
 import { RootStackParamList } from '../types';
-import { useLesson } from '../hooks/useLesson';
+import { useLesson } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
