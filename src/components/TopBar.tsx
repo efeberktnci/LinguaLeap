@@ -1,43 +1,62 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
-import { useUser } from '../hooks';
+import { useUser, useLanguage } from '../hooks';
 
 const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) => {
   const { user } = useUser();
+  const { t, options, language, setLanguage, activeFlag } = useLanguage();
+  const [open, setOpen] = useState(false);
+
+  const onSelect = async (code: (typeof options)[number]['code']) => {
+    await setLanguage(code);
+    setOpen(false);
+  };
 
   return (
     <View style={styles.outer}>
       <View style={styles.container}>
-        {showLanguage && (
-          <TouchableOpacity style={styles.langButton} activeOpacity={0.85}>
-            <Text style={styles.flag}>🇬🇧</Text>
+        {showLanguage ? (
+          <TouchableOpacity style={styles.langButton} activeOpacity={0.85} onPress={() => setOpen(true)}>
+            <Text style={styles.flag}>{activeFlag}</Text>
           </TouchableOpacity>
+        ) : (
+          <View />
         )}
 
         <View style={styles.statsRow}>
           <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Text style={styles.statIcon}>🔥</Text>
-            <Text style={[styles.statValue, { color: COLORS.accent }]}>
-              {user?.streak ?? 0}
-            </Text>
+            <Ionicons name="flame" size={16} color={COLORS.accent} />
+            <Text style={[styles.statValue, { color: COLORS.accent }]}>{user?.streak ?? 0}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Text style={styles.statIcon}>💎</Text>
-            <Text style={[styles.statValue, { color: COLORS.blue }]}>
-              {user?.gems ?? 0}
-            </Text>
+            <Ionicons name="diamond" size={16} color={COLORS.blue} />
+            <Text style={[styles.statValue, { color: COLORS.blue }]}>{user?.gems ?? 0}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Text style={[styles.statIcon]}>❤️</Text>
-            <Text style={[styles.statValue, { color: COLORS.red }]}>
-              {user?.hearts ?? 0}
-            </Text>
+            <Ionicons name="heart" size={16} color={COLORS.red} />
+            <Text style={[styles.statValue, { color: COLORS.red }]}>{user?.hearts ?? 0}</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('language.title')}</Text>
+            {options.map((opt) => (
+              <TouchableOpacity key={opt.code} style={[styles.optionRow, opt.code === language && styles.optionRowActive]} onPress={() => onSelect(opt.code)}>
+                <Text style={styles.optionFlag}>{opt.flag}</Text>
+                <Text style={styles.optionLabel}>{opt.label}</Text>
+                {opt.code === language && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -60,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   langButton: {
-    width: 48,
+    minWidth: 48,
     height: 40,
     borderRadius: 14,
     borderWidth: 1,
@@ -68,11 +87,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FAFAFA',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   flag: {
     fontSize: 22,
@@ -94,17 +108,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  statIcon: {
-    fontSize: 18,
   },
   statValue: {
     fontSize: 16,
     ...FONTS.bold,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-start',
+    paddingTop: Platform.OS === 'ios' ? 108 : 86,
+    paddingHorizontal: 16,
+  },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.swan,
+  },
+  modalTitle: {
+    fontSize: 14,
+    ...FONTS.bold,
+    color: COLORS.eel,
+    marginBottom: 8,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 8,
+  },
+  optionRowActive: {
+    backgroundColor: COLORS.primaryBg,
+  },
+  optionFlag: {
+    fontSize: 18,
+  },
+  optionLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.eel,
+    ...FONTS.medium,
   },
 });

@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+﻿import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types';
-import { useAuth } from '../../hooks';
+import { useAuth, useLanguage } from '../../hooks';
 import { COLORS, FONTS } from '../../theme/colors';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'> };
 
 const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
-  const { resetPassword, error, clearError } = useAuth();
+  const { resetPassword, error } = useAuth();
+  const { tx } = useLanguage();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
 
@@ -24,11 +25,11 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     return (
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.checkIcon}>📧</Text>
-          <Text style={styles.title}>E-posta Gönderildi</Text>
-          <Text style={styles.subtitle}>Şifre sıfırlama bağlantısı {email} adresine gönderildi.</Text>
+          <Text style={styles.checkIcon}>{'\u{1F4E7}'}</Text>
+          <Text style={styles.title}>{tx('E-posta Gonderildi')}</Text>
+          <Text style={styles.subtitle}>{tx('Sifre sifirlama baglantisi')} {email} {tx('adresine gonderildi.')}</Text>
           <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.buttonText}>GİRİŞE DÖN</Text>
+            <Text style={styles.buttonText}>{tx('GIRISE DON')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -38,8 +39,8 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Şifremi Unuttum</Text>
-        <Text style={styles.subtitle}>E-posta adresini gir, sıfırlama bağlantısı gönderelim.</Text>
+        <Text style={styles.title}>{tx('Sifremi Unuttum')}</Text>
+        <Text style={styles.subtitle}>{tx('E-posta adresini gir, sifirlama baglantisi gonderelim.')}</Text>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -48,11 +49,11 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <TouchableOpacity style={[styles.button, !email.includes('@') && styles.buttonDisabled]} onPress={handleReset} disabled={!email.includes('@')}>
-          <Text style={styles.buttonText}>GÖNDER</Text>
+          <Text style={styles.buttonText}>{tx('GONDER')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Geri dön</Text>
+          <Text style={styles.backText}>{tx('Geri don')}</Text>
         </TouchableOpacity>
       </View>
     </View>

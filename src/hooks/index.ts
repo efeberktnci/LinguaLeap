@@ -1,15 +1,16 @@
-import { useContext, useMemo, useCallback, useState } from 'react';
+﻿import { useContext, useMemo, useCallback, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { calculateProgress } from '../utils/helpers';
 import * as firestoreService from '../services/firestore';
 import { QuizQuestion } from '../types';
+import { useLanguageContext } from '../context/LanguageContext';
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
 export function useUser() {
-  const { profile, user: authUser } = useContext(AuthContext);
+  const { profile, user: authUser, refreshProfile } = useContext(AuthContext);
 
   const levelProgress = useMemo(
     () =>
@@ -51,6 +52,19 @@ export function useUser() {
     return firestoreService.refillHearts(authUser.uid, authUser.idToken);
   }, [authUser?.uid, authUser?.idToken]);
 
+  
+  const updateAvatar = useCallback(async (avatar: string) => {
+    if (!authUser?.uid || !authUser?.idToken) return;
+    await firestoreService.updateUserAvatar(authUser.uid, avatar, authUser.idToken);
+    await refreshProfile();
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const resetStats = useCallback(async () => {
+    if (!authUser?.uid || !authUser?.idToken) return;
+    await firestoreService.resetUserStats(authUser.uid, authUser.idToken);
+    await refreshProfile();
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
   return {
     user: profile,
     profile,
@@ -61,7 +75,9 @@ export function useUser() {
     unlockedAchievements,
     addXP,
     spendGems,
-    refillHearts
+    refillHearts,
+    updateAvatar,
+    resetStats,
   };
 }
 
@@ -198,4 +214,13 @@ export function useLesson(questions: QuizQuestion[]) {
     finishLesson,
   };
 }
+
+
+export function useLanguage() {
+  return useLanguageContext();
+}
+
+
+
+
 

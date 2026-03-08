@@ -2,16 +2,26 @@ import React, { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SHADOWS } from '../theme/colors';
-import { useUser, useAuth } from '../hooks';
-import { getGreeting, calculateProgress } from '../utils/helpers';
+import { useUser, useAuth, useLanguage } from '../hooks';
+import { calculateProgress } from '../utils/helpers';
 import ProgressBar from '../components/ProgressBar';
 import TopBar from '../components/TopBar';
+import { UNITS } from '../data/mockData';
 
 const DAILY_GOAL = 250;
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, uid } = useUser();
   const { refreshProfile } = useAuth();
+  const { t, tx } = useLanguage();
+
+  const getLocalizedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return tx('Iyi geceler');
+    if (hour < 12) return tx('Gunaydin');
+    if (hour < 18) return tx('Iyi gunler');
+    return tx('Iyi aksamlar');
+  };
 
   // Ekran her açıldığında profili yenile
   useEffect(() => {
@@ -33,14 +43,67 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const levelProgress = calculateProgress(user.currentXP, user.xpToNextLevel);
 
+  // Seviye görünümü: levele göre tema
+  const level = user.level ?? 1;
+  let levelCardBg = COLORS.white;
+  let levelCardBorder = COLORS.swan;
+  let levelBadgeBg = COLORS.secondary;
+  let levelProgressColor = COLORS.secondary;
+
+  if (level < 10) {
+    // Başlangıç: yeşil tonlar
+    levelCardBg = '#F1FBEA';
+    levelCardBorder = COLORS.primaryBg;
+    levelBadgeBg = COLORS.primary;
+    levelProgressColor = COLORS.primary;
+  } else if (level < 30) {
+    // Orta: mavi tonlar
+    levelCardBg = '#E8F4FD';
+    levelCardBorder = COLORS.blueLight;
+    levelBadgeBg = COLORS.blue;
+    levelProgressColor = COLORS.blue;
+  } else if (level < 60) {
+    // İleri: mor tonlar
+    levelCardBg = '#F5ECFF';
+    levelCardBorder = COLORS.secondary;
+    levelBadgeBg = COLORS.secondaryDark;
+    levelProgressColor = COLORS.secondaryDark;
+  } else {
+    // Usta: kırmızı / elmas tonları
+    levelCardBg = '#FFF0F0';
+    levelCardBorder = COLORS.redLight;
+    levelBadgeBg = COLORS.red;
+    levelProgressColor = COLORS.red;
+  }
+
   // Tamamlanan ders sayısı
   const completedCount = (user.completedLessons || []).length;
+
+  // Hatasız ünite tamamlandı mı? (bir ünitedeki tüm dersler tam taç)
+  const lessonProgressMap = user.lessonProgress || {};
+  const lessonDefById = new Map<string, { maxCrowns: number }>();
+  UNITS.forEach((unit) => {
+    unit.lessons.forEach((lesson) => {
+      lessonDefById.set(lesson.id, { maxCrowns: lesson.maxCrowns });
+    });
+  });
+
+  const hasPerfectUnit = UNITS.some((unit) => {
+    // Bu ünitedeki tüm dersler için progress var ve taç sayısı maxCrowns'a eşit veya büyükse
+    return unit.lessons.every((lesson) => {
+      const progress = (lessonProgressMap as any)[lesson.id];
+      if (!progress) return false;
+      const def = lessonDefById.get(lesson.id);
+      if (!def) return false;
+      return (progress.crowns || 0) >= def.maxCrowns;
+    });
+  });
 
   // Günlük görevler - gerçek veriden hesaplama
   const quests = [
     {
       id: 'dq_1',
-      title: '1 ders tamamla',
+      title: tx('1 ders tamamla'),
       icon: '📖',
       progress: Math.min(completedCount, 1),
       target: 1,
@@ -49,7 +112,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     },
     {
       id: 'dq_2',
-      title: `${DAILY_GOAL} XP kazan`,
+      title: `${DAILY_GOAL} XP ${tx('XP kazan')}`,
       icon: '⚡',
       progress: Math.min(user.dailyXPEarned, DAILY_GOAL),
       target: DAILY_GOAL,
@@ -58,12 +121,12 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     },
     {
       id: 'dq_3',
-      title: 'Hatasız ders bitir',
+      title: tx('Hatasiz unite bitir'),
       icon: '🎯',
-      progress: 0, // TODO: track perfect lessons
+      progress: hasPerfectUnit ? 1 : 0,
       target: 1,
       xpReward: 20,
-      completed: false,
+      completed: hasPerfectUnit,
     },
   ];
 
@@ -73,7 +136,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       const totalLessons = 23; // toplam ders
       const done = (user.completedLessons || []).length;
       const progress = totalLessons > 0 ? Math.min(done / totalLessons, 1) : 0;
-      return { id: 'en', name: 'İngilizce', flag: '🇬🇧', progress };
+      return { id: 'en', name: tx('Ingilizce'), flag: '\u{1F1EC}\u{1F1E7}', progress };
     }
     return { id: courseId, name: courseId, flag: '🌍', progress: 0 };
   });
@@ -86,9 +149,9 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* Karsilama */}
         <View style={styles.greetingCard}>
           <View style={styles.greetingLeft}>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
+            <Text style={styles.greeting}>{getLocalizedGreeting()},</Text>
             <Text style={styles.userName}>{user.name}! 👋</Text>
-            <Text style={styles.greetingSub}>Derslerine devam edelim mi?</Text>
+            <Text style={styles.greetingSub}>{tx('Derslerine devam edelim mi?')}</Text>
           </View>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatar}>{user.avatar}</Text>
@@ -101,10 +164,10 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Text style={styles.streakFire}>🔥</Text>
             <View>
               <Text style={styles.streakCount}>
-                {user.streak > 0 ? `${user.streak} günlük seri!` : 'Seriyi başlat!'}
+                {user.streak > 0 ? `${user.streak} ${tx('gunluk seri')}!` : tx('Seriyi baslat!')}
               </Text>
               <Text style={styles.streakSub}>
-                {user.longestStreak > 0 ? `En uzun: ${user.longestStreak} gün` : 'Bugün ilk dersini tamamla'}
+                {user.longestStreak > 0 ? `${tx('En uzun')}: ${user.longestStreak} ${tx('gun')}` : tx('Bugun ilk dersini tamamla')}
               </Text>
             </View>
           </View>
@@ -114,7 +177,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <View style={[styles.dot, day.xp > 0 ? styles.dotActive : styles.dotInactive]}>
                   {day.xp > 0 && <Ionicons name="checkmark" size={10} color={COLORS.white} />}
                 </View>
-                <Text style={styles.dayLabel}>{day.day}</Text>
+                <Text style={styles.dayLabel}>{tx(day.day)}</Text>
               </View>
             ))}
           </View>
@@ -123,22 +186,22 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* Günlük Hedef */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Günlük Hedef</Text>
+            <Text style={styles.sectionTitle}>{t('home.dailyGoal')}</Text>
             <Text style={styles.sectionBadge}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
           </View>
           <ProgressBar progress={dailyProgress} height={16} color={dailyGoalReached ? '#FFD700' : COLORS.blue} style={{ marginTop: 8 }} />
-          {dailyGoalReached && <Text style={styles.goalComplete}>🎉 Günlük hedefe ulaştın!</Text>}
+          {dailyGoalReached && <Text style={styles.goalComplete}>{tx('Gunluk hedefe ulastin!')}</Text>}
         </View>
 
         {/* Seviye */}
-        <View style={styles.levelCard}>
+        <View style={[styles.levelCard, { backgroundColor: levelCardBg, borderColor: levelCardBorder }]}>
           <View style={styles.levelRow}>
-            <View style={styles.levelBadge}>
+            <View style={[styles.levelBadge, { backgroundColor: levelBadgeBg }]}>
               <Text style={styles.levelNumber}>{user.level}</Text>
             </View>
             <View style={styles.levelInfo}>
-              <Text style={styles.levelTitle}>Seviye {user.level}</Text>
-              <ProgressBar progress={levelProgress} height={10} color={COLORS.secondary} style={{ marginTop: 4 }} />
+              <Text style={styles.levelTitle}>{t('home.level')} {user.level}</Text>
+              <ProgressBar progress={levelProgress} height={10} color={levelProgressColor} style={{ marginTop: 4 }} />
               <Text style={styles.levelXP}>{user.currentXP} / {user.xpToNextLevel} XP</Text>
             </View>
           </View>
@@ -146,7 +209,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* Aktif Kurslar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Aktif Kurslar</Text>
+          <Text style={styles.sectionTitle}>{t('home.activeCourses')}</Text>
           <View style={styles.coursesRow}>
             {courses.map((course: any) => (
               <TouchableOpacity key={course.id} style={styles.courseCard} onPress={() => navigation.navigate('Learn')}>
@@ -161,7 +224,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* Günlük Görevler */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Günlük Görevler</Text>
+          <Text style={styles.sectionTitle}>{t('home.dailyQuests')}</Text>
           {quests.map((quest) => {
             const questProgress = Math.min(quest.progress / quest.target, 1);
             return (
@@ -189,15 +252,15 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         {/* Hızlı Başlat */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hızlı Başlat</Text>
+          <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
           <View style={styles.quickActions}>
             <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.primary }]} onPress={() => navigation.navigate('Learn')}>
               <Ionicons name="play" size={24} color={COLORS.white} />
-              <Text style={styles.quickActionText}>Derse Devam Et</Text>
+              <Text style={styles.quickActionText}>{t('home.continueLesson')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.blue }]} onPress={() => navigation.navigate('Learn')}>
               <Ionicons name="refresh" size={24} color={COLORS.white} />
-              <Text style={styles.quickActionText}>Tekrar Yap</Text>
+              <Text style={styles.quickActionText}>{t('home.review')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -235,7 +298,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 18, color: COLORS.owl, ...FONTS.bold, marginBottom: 12 },
-  sectionBadge: { fontSize: 14, color: COLORS.blue, ...FONTS.bold, marginBottom: 12 },
+  sectionBadge: { fontSize: 14, color: COLORS.black, ...FONTS.bold, marginBottom: 12 },
   goalComplete: { fontSize: 14, color: COLORS.primaryDark, ...FONTS.semiBold, marginTop: 8, textAlign: 'center' },
   levelCard: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 2, borderColor: COLORS.swan },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -264,3 +327,12 @@ const styles = StyleSheet.create({
   quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, gap: 8, ...SHADOWS.medium },
   quickActionText: { fontSize: 15, color: COLORS.white, ...FONTS.bold },
 });
+
+
+
+
+
+
+
+
+

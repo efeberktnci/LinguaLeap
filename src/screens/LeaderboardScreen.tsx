@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { COLORS, FONTS } from '../theme/colors';
-import { useUser, useAuth } from '../hooks';
+import { useUser, useAuth, useLanguage } from '../hooks';
 import { getLeagueInfo, formatNumber } from '../utils/helpers';
 import { LeaderboardEntry } from '../types';
 import * as firestoreService from '../services/firestore';
@@ -12,6 +12,7 @@ const LeaderboardScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState('weekly');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, tx } = useLanguage();
 
   useEffect(() => {
     loadLeaderboard();
@@ -38,9 +39,8 @@ const LeaderboardScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sıralama</Text>
+        <Text style={styles.headerTitle}>{t('leaderboard.title')}</Text>
       </View>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* Lig Karti */}
@@ -48,19 +48,19 @@ const LeaderboardScreen: React.FC = () => {
           <View style={styles.leagueIconContainer}>
             <Text style={styles.leagueIcon}>{leagueInfo.icon}</Text>
           </View>
-          <Text style={styles.leagueName}>{user.league} Ligi</Text>
+          <Text style={styles.leagueName}>{user.league} {tx('Lig')}</Text>
           <Text style={styles.leagueSubtitle}>
-            {entries.length > 0 ? 'Top 10\'da kal ve yüksel!' : 'Ders tamamlayarak sıralamaya gir!'}
+            {entries.length > 0 ? tx('Top 10da kal ve yuksel!') : tx('Ders tamamlayarak siralamaya gir!')}
           </Text>
           <View style={styles.leagueStats}>
             <View style={styles.leagueStatItem}>
               <Text style={styles.leagueStatValue}>{userRank > 0 ? `#${userRank}` : '-'}</Text>
-              <Text style={styles.leagueStatLabel}>Sıralama</Text>
+              <Text style={styles.leagueStatLabel}>{tx('Siralama')}</Text>
             </View>
             <View style={styles.leagueStatDivider} />
             <View style={styles.leagueStatItem}>
               <Text style={styles.leagueStatValue}>{formatNumber(user.totalXP)}</Text>
-              <Text style={styles.leagueStatLabel}>Toplam XP</Text>
+              <Text style={styles.leagueStatLabel}>{tx('Toplam XP')}</Text>
             </View>
           </View>
         </View>
@@ -70,7 +70,7 @@ const LeaderboardScreen: React.FC = () => {
           {['weekly', 'allTime'].map((tab) => (
             <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === 'weekly' ? 'Bu Hafta' : 'Tüm Zamanlar'}
+                {tab === 'weekly' ? t('leaderboard.thisWeek') : t('leaderboard.allTime')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -80,13 +80,13 @@ const LeaderboardScreen: React.FC = () => {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Sıralama yükleniyor...</Text>
+            <Text style={styles.loadingText}>{tx('Siralama yukleniyor...')}</Text>
           </View>
         ) : entries.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>🏆</Text>
-            <Text style={styles.emptyTitle}>Henüz Sıralama Yok</Text>
-            <Text style={styles.emptyDesc}>Ders tamamlayarak sıralamada yerini al!</Text>
+            <Text style={styles.emptyTitle}>{tx('Henuz Siralama Yok')}</Text>
+            <Text style={styles.emptyDesc}>{tx('Ders tamamlayarak siralamada yerini al!')}</Text>
           </View>
         ) : (
           <View style={styles.listContainer}>
@@ -109,7 +109,7 @@ const LeaderboardScreen: React.FC = () => {
                     </View>
                     <View>
                       <Text style={[styles.userName, isCurrentUser && styles.userNameCurrent]}>{entry.name}</Text>
-                      {isCurrentUser && <Text style={styles.youBadge}>Sen</Text>}
+                      {isCurrentUser && <Text style={styles.youBadge}>{tx('Sen')}</Text>}
                     </View>
                   </View>
                   <View style={styles.xpContainer}>
@@ -126,11 +126,11 @@ const LeaderboardScreen: React.FC = () => {
           <View style={styles.zoneInfo}>
             <View style={styles.zoneItem}>
               <View style={[styles.zoneIndicator, { backgroundColor: COLORS.primary }]} />
-              <Text style={styles.zoneText}>Yükselme bölgesi (Top 10)</Text>
+              <Text style={styles.zoneText}>{tx('Yukselme bolgesi (Top 10)')}</Text>
             </View>
             <View style={styles.zoneItem}>
               <View style={[styles.zoneIndicator, { backgroundColor: COLORS.red }]} />
-              <Text style={styles.zoneText}>Düşme bölgesi (Son 5)</Text>
+              <Text style={styles.zoneText}>{tx('Dusme bolgesi (Son 5)')}</Text>
             </View>
           </View>
         )}
@@ -193,3 +193,9 @@ const styles = StyleSheet.create({
   zoneIndicator: { width: 12, height: 12, borderRadius: 6 },
   zoneText: { fontSize: 13, color: COLORS.wolf },
 });
+
+
+
+
+
+

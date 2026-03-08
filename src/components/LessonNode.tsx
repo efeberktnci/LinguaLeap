@@ -12,6 +12,8 @@ const ICON_MAP: Record<LessonType, keyof typeof Ionicons.glyphMap> = {
 };
 
 interface LessonNodeProps {
+  starRating?: number;
+  showStars?: boolean;
   lesson: Lesson & {
     locked?: boolean;
     current?: boolean;
@@ -27,6 +29,8 @@ const LessonNode: React.FC<LessonNodeProps> = ({
   unitColor,
   unitShadow,
   onPress,
+  starRating = 0,
+  showStars = false,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const glowOpacity = useRef(new Animated.Value(0.18)).current;
@@ -159,6 +163,23 @@ const LessonNode: React.FC<LessonNodeProps> = ({
       >
         {lesson.title}
       </Text>
+
+      {showStars && !isLocked && (
+        <View style={styles.starRow}>
+          {[1, 2, 3].map((slot) => {
+            const fill = Math.max(0, Math.min(1, starRating - (slot - 1)));
+            const iconName = fill >= 0.99 ? 'star' : fill >= 0.49 ? 'star-half' : 'star-outline';
+            return (
+              <Ionicons
+                key={slot}
+                name={iconName as any}
+                size={14}
+                color={fill > 0 ? '#FFC800' : COLORS.borderDark}
+              />
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 };
@@ -227,5 +248,10 @@ const styles = StyleSheet.create({
   },
   titleLocked: {
     color: COLORS.hare,
+  },
+  starRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    gap: 2,
   },
 });

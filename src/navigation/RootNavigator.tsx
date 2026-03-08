@@ -3,7 +3,7 @@ import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../hooks';
+import { useAuth, useLanguage } from '../hooks';
 import { RootStackParamList, AuthStackParamList, TabParamList } from '../types';
 import { COLORS } from '../theme/colors';
 
@@ -21,21 +21,23 @@ const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const TAB_CONFIG: Record<keyof TabParamList, { active: string; inactive: string; label: string }> = {
-  Home: { active: 'home', inactive: 'home-outline', label: 'Ana Sayfa' },
-  Learn: { active: 'book', inactive: 'book-outline', label: 'Öğren' },
-  Leaderboard: { active: 'trophy', inactive: 'trophy-outline', label: 'Sıralama' },
-  Shop: { active: 'cart', inactive: 'cart-outline', label: 'Mağaza' },
-  Profile: { active: 'person', inactive: 'person-outline', label: 'Profil' },
-};
-
 function HomeTabs() {
+  const { t } = useLanguage();
+
+  const tabConfig: Record<keyof TabParamList, { active: string; inactive: string; label: string }> = {
+    Home: { active: 'home', inactive: 'home-outline', label: t('tab.home') },
+    Learn: { active: 'book', inactive: 'book-outline', label: t('tab.learn') },
+    Leaderboard: { active: 'trophy', inactive: 'trophy-outline', label: t('tab.leaderboard') },
+    Shop: { active: 'cart', inactive: 'cart-outline', label: t('tab.shop') },
+    Profile: { active: 'person', inactive: 'person-outline', label: t('tab.profile') },
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, color }) => {
-          const cfg = TAB_CONFIG[route.name];
+          const cfg = tabConfig[route.name];
           return (
             <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
               <Ionicons name={(focused ? cfg.active : cfg.inactive) as any} size={24} color={color} />
@@ -44,8 +46,15 @@ function HomeTabs() {
         },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.hare,
-        tabBarLabel: TAB_CONFIG[route.name].label,
-        tabBarStyle: { backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.swan, height: Platform.OS === 'ios' ? 88 : 64, paddingBottom: Platform.OS === 'ios' ? 28 : 8, paddingTop: 8 },
+        tabBarLabel: tabConfig[route.name].label,
+        tabBarStyle: {
+          backgroundColor: COLORS.white,
+          borderTopWidth: 1,
+          borderTopColor: COLORS.swan,
+          height: Platform.OS === 'ios' ? 88 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 8,
+        },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' as const, marginTop: 2 },
       })}
     >

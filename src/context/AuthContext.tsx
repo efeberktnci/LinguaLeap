@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+﻿import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as firebaseApi from '../config/firebase';
 import { UserProfile } from '../types';
@@ -155,8 +155,10 @@ function getErrorMessage(code: string): string {
     'TOO_MANY_ATTEMPTS_TRY_LATER': 'Çok fazla deneme. Biraz bekle.',
     'INVALID_LOGIN_CREDENTIALS': 'E-posta veya şifre hatalı.',
   };
+
   for (const [key, msg] of Object.entries(messages)) {
     if (code.includes(key)) return msg;
   }
+
   return 'Bir hata oluştu. Tekrar dene.';
 }

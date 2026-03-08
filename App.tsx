@@ -3,14 +3,18 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import { LanguageProvider } from './src/context/LanguageContext';
 
 const App: React.FC = () => (
   <AuthProvider>
-    <NavigationContainer>
+    <LanguageProvider>
+      <NavigationContainer>
       <StatusBar style="dark" />
       <RootNavigator />
     </NavigationContainer>
+    </LanguageProvider>
   </AuthProvider>
 );
 
 export default App;
+

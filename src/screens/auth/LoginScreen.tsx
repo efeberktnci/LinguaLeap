@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types';
-import { useAuth } from '../../hooks';
+import { useAuth, useLanguage } from '../../hooks';
 import { COLORS, FONTS } from '../../theme/colors';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'> };
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { signIn, loading, error, clearError } = useAuth();
+  const { tx } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -20,22 +21,22 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.content}>
-        <Text style={styles.logo}>🦉</Text>
+        <Text style={styles.logo}>{'\u{1F989}'}</Text>
         <Text style={styles.title}>LinguaLeap</Text>
-        <Text style={styles.subtitle}>Dil öğrenmenin en eğlenceli yolu</Text>
+        <Text style={styles.subtitle}>{tx('Dil ogrenmenin en eglenceli yolu')}</Text>
 
         {error && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity onPress={clearError}>
-              <Text style={styles.errorClose}>✕</Text>
+              <Text style={styles.errorClose}>x</Text>
             </TouchableOpacity>
           </View>
         )}
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>E-posta</Text>
+            <Text style={styles.inputLabel}>{tx('E-posta')}</Text>
             <TextInput
               style={styles.input}
               value={email}
@@ -49,19 +50,19 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Şifre</Text>
+            <Text style={styles.inputLabel}>{tx('Sifre')}</Text>
             <TextInput
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="En az 6 karakter"
+              placeholder={tx('En az 6 karakter')}
               placeholderTextColor={COLORS.hare}
               secureTextEntry
             />
           </View>
 
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotText}>Şifremi unuttum</Text>
+            <Text style={styles.forgotText}>{tx('Sifremi unuttum')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -72,15 +73,15 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator color={COLORS.white} />
             ) : (
-              <Text style={styles.buttonText}>GİRİŞ YAP</Text>
+              <Text style={styles.buttonText}>{tx('GIRIS YAP')}</Text>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Hesabın yok mu? </Text>
+          <Text style={styles.footerText}>{tx('Hesabin yok mu?')} </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Kayıt ol</Text>
+            <Text style={styles.footerLink}>{tx('Kayit ol')}</Text>
           </TouchableOpacity>
         </View>
       </View>

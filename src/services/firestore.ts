@@ -1,4 +1,4 @@
-import { setDocument, getDocument, updateDocument, queryCollection } from '../config/firebase';
+﻿import { setDocument, getDocument, queryCollection } from '../config/firebase';
 import { UserProfile, LeaderboardEntry, LessonProgress, DailyXP } from '../types';
 
 const USERS = 'users';
@@ -16,8 +16,12 @@ const DEFAULT_ACHIEVEMENTS = [
 ];
 
 const EMPTY_WEEK: DailyXP[] = [
-  { day: 'Pzt', xp: 0 }, { day: 'Sal', xp: 0 }, { day: 'Çar', xp: 0 },
-  { day: 'Per', xp: 0 }, { day: 'Cum', xp: 0 }, { day: 'Cmt', xp: 0 },
+  { day: 'Pzt', xp: 0 },
+  { day: 'Sal', xp: 0 },
+  { day: 'Çar', xp: 0 },
+  { day: 'Per', xp: 0 },
+  { day: 'Cum', xp: 0 },
+  { day: 'Cmt', xp: 0 },
   { day: 'Paz', xp: 0 },
 ];
 
@@ -35,18 +39,36 @@ function getYesterdayStr(today: Date): string {
 }
 
 export async function createUserProfile(uid: string, email: string, name: string, username: string, token: string): Promise<UserProfile> {
-  const now = new Date();
-  const nowStr = now.toISOString();
+  const nowStr = new Date().toISOString();
   const profile: UserProfile = {
-    uid, email, name,
+    uid,
+    email,
+    name,
     username: `@${username.toLowerCase().replace(/\s/g, '_')}`,
-    avatar: '🦉', level: 1, totalXP: 0, currentXP: 0, xpToNextLevel: 100,
-    streak: 0, longestStreak: 0, lastActiveDate: '',
-    hearts: 5, maxHearts: 5, gems: 100, crowns: 0, league: 'Bronze', leagueRank: 0,
-    createdAt: nowStr, coursesActive: ['en_tr'], achievements: DEFAULT_ACHIEVEMENTS,
-    weeklyXP: [...EMPTY_WEEK], dailyGoal: 250, dailyXPEarned: 0,
-    completedLessons: [], lessonProgress: {},
+    avatar: '🦉',
+    level: 1,
+    totalXP: 0,
+    currentXP: 0,
+    xpToNextLevel: 100,
+    streak: 0,
+    longestStreak: 0,
+    lastActiveDate: '',
+    hearts: 5,
+    maxHearts: 5,
+    gems: 100,
+    crowns: 0,
+    league: 'Bronze',
+    leagueRank: 0,
+    createdAt: nowStr,
+    coursesActive: ['en_tr'],
+    achievements: DEFAULT_ACHIEVEMENTS,
+    weeklyXP: [...EMPTY_WEEK],
+    dailyGoal: 250,
+    dailyXPEarned: 0,
+    completedLessons: [],
+    lessonProgress: {},
   };
+
   await setDocument(USERS, uid, profile, token);
   await setDocument(LEADERBOARD, uid, { uid, name, avatar: '🦉', xp: 0, league: 'Bronze' }, token);
   return profile;
@@ -60,48 +82,42 @@ export async function addXP(uid: string, amount: number, token: string): Promise
   const profile = await getUserProfile(uid, token);
   if (!profile) return;
 
-  // Seviye hesapla
   let newCurrentXP = profile.currentXP + amount;
   let newLevel = profile.level;
   let newXpToNext = profile.xpToNextLevel;
 
   while (newCurrentXP >= newXpToNext) {
     newCurrentXP -= newXpToNext;
-    newLevel++;
+    newLevel += 1;
     newXpToNext = Math.floor(100 * Math.pow(1.15, newLevel - 1));
   }
 
-  // Haftalık XP güncelle
   const today = new Date();
   const dayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
   const weeklyXP = [...(profile.weeklyXP || EMPTY_WEEK)];
   weeklyXP[dayIndex] = { ...weeklyXP[dayIndex], xp: (weeklyXP[dayIndex]?.xp || 0) + amount };
 
-  // Streak hesapla - DÜZGÜN
   const todayStr = getDateStr(today);
   const yesterdayStr = getYesterdayStr(today);
   const lastActive = profile.lastActiveDate || '';
   let streak = profile.streak || 0;
-  let longestStreak = profile.longestStreak || 0;
 
   if (lastActive !== todayStr) {
-    // Bugün ilk kez XP kazanıyor
-    if (lastActive === yesterdayStr) {
-      // Dün de aktifti, streak devam
-      streak += 1;
-    } else if (lastActive === '') {
-      // İlk kez kullanıyor
-      streak = 1;
-    } else {
-      // Ara verilmiş, streak sıfırla
-      streak = 1;
-    }
-    longestStreak = Math.max(longestStreak, streak);
+    if (lastActive === yesterdayStr) streak += 1;
+    else streak = 1;
   }
-  // Eğer bugün zaten aktifse streak değişmez
 
-  // Başarıları kontrol et
+  let consecutive = 0;
+  for (let i = dayIndex; i >= 0; i -= 1) {
+    const dayXP = weeklyXP[i]?.xp ?? 0;
+    if (dayXP > 0) consecutive += 1;
+    else break;
+  }
+  if (consecutive > streak) streak = consecutive;
+
+  const longestStreak = Math.max(profile.longestStreak || 0, streak);
   const newTotalXP = profile.totalXP + amount;
+
   const achievements = checkAchievements(profile, {
     totalXP: newTotalXP,
     streak,
@@ -124,8 +140,11 @@ export async function addXP(uid: string, amount: number, token: string): Promise
 
   await setDocument(USERS, uid, updates, token);
   await setDocument(LEADERBOARD, uid, {
-    uid, name: profile.name, avatar: profile.avatar,
-    xp: newTotalXP, league: profile.league,
+    uid,
+    name: profile.name,
+    avatar: profile.avatar,
+    xp: newTotalXP,
+    league: profile.league,
   }, token);
 }
 
@@ -136,15 +155,10 @@ export async function loseHeart(uid: string, token: string): Promise<void> {
 }
 
 export async function refillHearts(uid: string, token: string): Promise<boolean> {
-
   const profile = await getUserProfile(uid, token);
   if (!profile) return false;
 
-  await setDocument(USERS, uid, {
-    ...profile,
-    hearts: profile.maxHearts
-  }, token);
-
+  await setDocument(USERS, uid, { ...profile, hearts: profile.maxHearts }, token);
   return true;
 }
 
@@ -155,7 +169,28 @@ export async function spendGems(uid: string, amount: number, token: string): Pro
   return true;
 }
 
-export async function completeLesson(uid: string, lessonId: string, score: number, totalQuestions: number, token: string): Promise<void> {
+export async function updateUserAvatar(uid: string, avatar: string, token: string): Promise<void> {
+  const profile = await getUserProfile(uid, token);
+  if (!profile) return;
+
+  await setDocument(USERS, uid, { ...profile, avatar }, token);
+  await setDocument(LEADERBOARD, uid, {
+    uid,
+    name: profile.name,
+    avatar,
+    xp: profile.totalXP,
+    league: profile.league,
+  }, token);
+}
+
+export async function completeLesson(
+  uid: string,
+  lessonId: string,
+  score: number,
+  totalQuestions: number,
+  perfect: boolean,
+  token: string,
+): Promise<void> {
   const profile = await getUserProfile(uid, token);
   if (!profile) return;
 
@@ -190,6 +225,45 @@ export async function getLeaderboard(token: string, topN: number = 20): Promise<
   return await queryCollection(LEADERBOARD, token, 'xp', topN);
 }
 
+export async function resetUserStats(uid: string, token: string): Promise<UserProfile | null> {
+  const profile = await getUserProfile(uid, token);
+  if (!profile) return null;
+
+  const resetProfile: UserProfile = {
+    ...profile,
+    level: 1,
+    totalXP: 0,
+    currentXP: 0,
+    xpToNextLevel: 100,
+    streak: 0,
+    longestStreak: 0,
+    lastActiveDate: '',
+    hearts: 5,
+    maxHearts: 5,
+    gems: 100,
+    crowns: 0,
+    league: 'Bronze',
+    leagueRank: 0,
+    achievements: DEFAULT_ACHIEVEMENTS.map((a) => ({ ...a, unlocked: false })),
+    weeklyXP: [...EMPTY_WEEK],
+    dailyGoal: 250,
+    dailyXPEarned: 0,
+    completedLessons: [],
+    lessonProgress: {},
+  };
+
+  await setDocument(USERS, uid, resetProfile, token);
+  await setDocument(LEADERBOARD, uid, {
+    uid,
+    name: resetProfile.name,
+    avatar: resetProfile.avatar,
+    xp: 0,
+    league: resetProfile.league,
+  }, token);
+
+  return resetProfile;
+}
+
 function checkAchievements(
   profile: UserProfile,
   updates: { totalXP: number; streak: number; completedLessons: string[] },
@@ -215,11 +289,3 @@ function checkAchievements(
 
   return achs;
 }
-
-
-
-
-
-
-
-

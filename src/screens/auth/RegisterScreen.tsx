@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types';
-import { useAuth } from '../../hooks';
+import { useAuth, useLanguage } from '../../hooks';
 import { COLORS, FONTS } from '../../theme/colors';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'> };
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { signUp, loading, error, clearError } = useAuth();
+  const { tx } = useLanguage();
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -24,47 +25,47 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>🦉</Text>
-        <Text style={styles.title}>Hesap Oluştur</Text>
-        <Text style={styles.subtitle}>Dil öğrenme macerana başla</Text>
+        <Text style={styles.logo}>{'\u{1F989}'}</Text>
+        <Text style={styles.title}>{tx('Hesap Olustur')}</Text>
+        <Text style={styles.subtitle}>{tx('Dil ogrenme macerana basla')}</Text>
 
         {error && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={clearError}><Text style={styles.errorClose}>✕</Text></TouchableOpacity>
+            <TouchableOpacity onPress={clearError}><Text style={styles.errorClose}>x</Text></TouchableOpacity>
           </View>
         )}
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Ad Soyad</Text>
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Ahmet Yılmaz" placeholderTextColor={COLORS.hare} autoCapitalize="words" />
+            <Text style={styles.inputLabel}>{tx('Ad Soyad')}</Text>
+            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={tx('Ahmet Yilmaz')} placeholderTextColor={COLORS.hare} autoCapitalize="words" />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Kullanıcı Adı</Text>
+            <Text style={styles.inputLabel}>{tx('Kullanici Adi')}</Text>
             <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="ahmet_yilmaz" placeholderTextColor={COLORS.hare} autoCapitalize="none" autoCorrect={false} />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>E-posta</Text>
+            <Text style={styles.inputLabel}>{tx('E-posta')}</Text>
             <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="ornek@mail.com" placeholderTextColor={COLORS.hare} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Şifre</Text>
-            <TextInput style={styles.input} value={password} onChangeText={setPassword} placeholder="En az 6 karakter" placeholderTextColor={COLORS.hare} secureTextEntry />
-            {password.length > 0 && password.length < 6 && <Text style={styles.hint}>En az 6 karakter gerekli</Text>}
+            <Text style={styles.inputLabel}>{tx('Sifre')}</Text>
+            <TextInput style={styles.input} value={password} onChangeText={setPassword} placeholder={tx('En az 6 karakter')} placeholderTextColor={COLORS.hare} secureTextEntry />
+            {password.length > 0 && password.length < 6 && <Text style={styles.hint}>{tx('En az 6 karakter gerekli')}</Text>}
           </View>
 
           <TouchableOpacity style={[styles.button, !isValid && styles.buttonDisabled]} onPress={handleRegister} disabled={loading || !isValid}>
-            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>KAYIT OL</Text>}
+            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.buttonText}>{tx('KAYIT OL')}</Text>}
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Zaten hesabın var mı? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}><Text style={styles.footerLink}>Giriş yap</Text></TouchableOpacity>
+          <Text style={styles.footerText}>{tx('Zaten hesabin var mi?')} </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}><Text style={styles.footerLink}>{tx('Giris yap')}</Text></TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

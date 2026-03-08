@@ -1,51 +1,54 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
-import { useUser, useAuth } from '../hooks';
+import { useUser, useAuth, useLanguage } from '../hooks';
 import { formatNumber, getLeagueInfo } from '../utils/helpers';
 
-const AVATARS = ['🦉', '🐶', '🐱', '🦊', '🐼', '🐨', '🦁', '🐸', '🐧', '🐯', '🦄', '🐻', '🐰', '🐵', '🦋', '🐬'];
+const AVATARS = [
+  '\u{1F989}', '\u{1F436}', '\u{1F431}', '\u{1F98A}', '\u{1F43C}', '\u{1F428}', '\u{1F981}', '\u{1F438}',
+  '\u{1F427}', '\u{1F42F}', '\u{1F984}', '\u{1F43B}', '\u{1F430}', '\u{1F435}', '\u{1F98B}', '\u{1F42C}',
+];
 
 const ProfileScreen: React.FC = () => {
-  const { user, uid } = useUser();
-  const { signOut, profile } = useAuth();
+  const { user, resetStats, updateAvatar } = useUser();
+  const { signOut } = useAuth();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showProfileInfo, setShowProfileInfo] = useState(false);
+  const { t, tx, language } = useLanguage();
 
   if (!user) return null;
 
   const leagueInfo = getLeagueInfo(user.league);
 
+  const localeMap = {
+    tr: 'tr-TR',
+    en: 'en-GB',
+    de: 'de-DE',
+    es: 'es-ES',
+  } as const;
+
   const handleLogout = () => {
-    Alert.alert('Çıkış Yap', 'Hesabından çıkış yapmak istediğine emin misin?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Çıkış Yap', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(tx('Cikis Yap'), tx('Hesabindan cikis yapmak istedigine emin misin?'), [
+      { text: tx('Vazgec'), style: 'cancel' },
+      { text: tx('Cikis Yap'), style: 'destructive', onPress: () => signOut() },
     ]);
   };
 
   const handleAvatarSelect = async (avatar: string) => {
-    try {
-      const { setDocument } = require('../config/firebase');
-      const authCtx = useAuth();
-      // We'll update via REST API
-      setShowAvatarPicker(false);
-    } catch {}
+    await updateAvatar(avatar);
     setShowAvatarPicker(false);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profil</Text>
+        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
       </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Profil Karti */}
         <View style={styles.profileCard}>
           <TouchableOpacity style={styles.avatarWrap} onPress={() => setShowAvatarPicker(true)}>
             <Text style={styles.avatarBig}>{user.avatar}</Text>
@@ -57,37 +60,35 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.email}>{user.email}</Text>
           <Text style={styles.joinDate}>
-            Üye: {new Date(user.createdAt).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' })}
+            {tx('Uye')}: {new Date(user.createdAt).toLocaleDateString(localeMap[language], { year: 'numeric', month: 'long' })}
           </Text>
         </View>
 
-        {/* Istatistikler */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>🔥</Text>
+            <Ionicons name="flame" size={22} color={COLORS.accent} />
             <Text style={styles.statValue}>{user.streak}</Text>
-            <Text style={styles.statLabel}>Gün Serisi</Text>
+            <Text style={styles.statLabel}>{tx('Gun Serisi')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>⚡</Text>
+            <Ionicons name="flash" size={22} color={COLORS.blue} />
             <Text style={styles.statValue}>{formatNumber(user.totalXP)}</Text>
-            <Text style={styles.statLabel}>Toplam XP</Text>
+            <Text style={styles.statLabel}>{tx('Toplam XP')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>👑</Text>
+            <Ionicons name="trophy" size={22} color={COLORS.accent} />
             <Text style={styles.statValue}>{user.crowns}</Text>
-            <Text style={styles.statLabel}>Taçlar</Text>
+            <Text style={styles.statLabel}>{tx('Taclar')}</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statIcon}>{leagueInfo.icon}</Text>
             <Text style={[styles.statValue, { fontSize: 14 }]}>{user.league}</Text>
-            <Text style={styles.statLabel}>Lig</Text>
+            <Text style={styles.statLabel}>{tx('Lig')}</Text>
           </View>
         </View>
 
-        {/* Basarilar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Başarılar</Text>
+          <Text style={styles.sectionTitle}>{tx('Basarilar')}</Text>
           <View style={styles.achievementsGrid}>
             {(user.achievements || []).map((ach: any) => (
               <View key={ach.id} style={[styles.achievementCard, !ach.unlocked && styles.achievementLocked]}>
@@ -103,44 +104,67 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Menu */}
         <View style={styles.menu}>
           <TouchableOpacity style={styles.menuItem} onPress={() => setShowProfileInfo(true)}>
             <Ionicons name="person-outline" size={22} color={COLORS.eel} />
-            <Text style={styles.menuText}>Profil Bilgileri</Text>
+            <Text style={styles.menuText}>{t('profile.info')}</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.hare} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => setShowSettings(true)}>
             <Ionicons name="settings-outline" size={22} color={COLORS.eel} />
-            <Text style={styles.menuText}>Ayarlar</Text>
+            <Text style={styles.menuText}>{t('profile.settings')}</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.hare} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => setShowNotifs(true)}>
             <Ionicons name="notifications-outline" size={22} color={COLORS.eel} />
-            <Text style={styles.menuText}>Bildirimler</Text>
+            <Text style={styles.menuText}>{t('profile.notifications')}</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.hare} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => setShowHelp(true)}>
             <Ionicons name="help-circle-outline" size={22} color={COLORS.eel} />
-            <Text style={styles.menuText}>Yardım</Text>
+            <Text style={styles.menuText}>{t('profile.help')}</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.hare} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={22} color={COLORS.red} />
-            <Text style={[styles.menuText, { color: COLORS.red }]}>Çıkış Yap</Text>
+            <Text style={[styles.menuText, { color: COLORS.red }]}>{t('profile.logout')}</Text>
             <Ionicons name="chevron-forward" size={20} color={COLORS.hare} />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.versionText}>LinguaLeap v1.0.0</Text>
+
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={() => {
+              Alert.alert(
+                tx('Istatistikleri Sifirla'),
+                tx('Tum XP, tac, seriler ve elmaslar sifirlanacak. Devam etmek istiyor musun?'),
+                [
+                  { text: tx('Vazgec'), style: 'cancel' },
+                  {
+                    text: tx('Sifirla'),
+                    style: 'destructive',
+                    onPress: async () => {
+                      await resetStats();
+                      Alert.alert(tx('Sifirlandi'), tx('Hesabin baslangic durumuna getirildi.'));
+                    },
+                  },
+                ],
+              );
+            }}
+          >
+            <Text style={styles.resetButtonText}>{tx('Istatistikleri Sifirla (DEV)')}</Text>
+          </TouchableOpacity>
+        )}
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Avatar Secici Modal */}
       <Modal visible={showAvatarPicker} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Avatar Seç</Text>
+            <Text style={styles.modalTitle}>{tx('Avatar Sec')}</Text>
             <View style={styles.avatarGrid}>
               {AVATARS.map((a) => (
                 <TouchableOpacity key={a} style={[styles.avatarOption, user.avatar === a && styles.avatarOptionActive]} onPress={() => handleAvatarSelect(a)}>
@@ -149,72 +173,68 @@ const ProfileScreen: React.FC = () => {
               ))}
             </View>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowAvatarPicker(false)}>
-              <Text style={styles.modalCloseText}>Kapat</Text>
+              <Text style={styles.modalCloseText}>{tx('Kapat')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Profil Bilgileri Modal */}
       <Modal visible={showProfileInfo} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Profil Bilgileri</Text>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>Ad</Text><Text style={styles.infoValue}>{user.name}</Text></View>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>Kullanıcı Adı</Text><Text style={styles.infoValue}>{user.username}</Text></View>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>E-posta</Text><Text style={styles.infoValue}>{user.email}</Text></View>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>Seviye</Text><Text style={styles.infoValue}>{user.level}</Text></View>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>Toplam XP</Text><Text style={styles.infoValue}>{user.totalXP}</Text></View>
-            <View style={styles.infoRow}><Text style={styles.infoLabel}>Lig</Text><Text style={styles.infoValue}>{user.league}</Text></View>
+            <Text style={styles.modalTitle}>{t('profile.info')}</Text>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{tx('Ad')}</Text><Text style={styles.infoValue}>{user.name}</Text></View>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{tx('Kullanici Adi')}</Text><Text style={styles.infoValue}>{user.username}</Text></View>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{tx('E-posta')}</Text><Text style={styles.infoValue}>{user.email}</Text></View>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{t('home.level')}</Text><Text style={styles.infoValue}>{user.level}</Text></View>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{tx('Toplam XP')}</Text><Text style={styles.infoValue}>{user.totalXP}</Text></View>
+            <View style={styles.infoRow}><Text style={styles.infoLabel}>{tx('Lig')}</Text><Text style={styles.infoValue}>{user.league}</Text></View>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowProfileInfo(false)}>
-              <Text style={styles.modalCloseText}>Kapat</Text>
+              <Text style={styles.modalCloseText}>{tx('Kapat')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Ayarlar Modal */}
       <Modal visible={showSettings} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Ayarlar</Text>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Günlük Hedef</Text><Text style={styles.settingValue}>{user.dailyGoal} XP</Text></View>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Uygulama Dili</Text><Text style={styles.settingValue}>Türkçe</Text></View>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Ses Efektleri</Text><Text style={styles.settingValue}>Açık</Text></View>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Karanlık Mod</Text><Text style={styles.settingValue}>Kapalı</Text></View>
+            <Text style={styles.modalTitle}>{t('profile.settings')}</Text>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{t('home.dailyGoal')}</Text><Text style={styles.settingValue}>{user.dailyGoal} XP</Text></View>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Uygulama Dili')}</Text><Text style={styles.settingValue}>{tx(language === 'tr' ? 'Turkce' : language === 'en' ? 'English' : language === 'de' ? 'Deutsch' : 'Espanol')}</Text></View>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Ses Efektleri')}</Text><Text style={styles.settingValue}>{tx('Acik')}</Text></View>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Karanlik Mod')}</Text><Text style={styles.settingValue}>{tx('Kapali')}</Text></View>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowSettings(false)}>
-              <Text style={styles.modalCloseText}>Kapat</Text>
+              <Text style={styles.modalCloseText}>{tx('Kapat')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Bildirimler Modal */}
       <Modal visible={showNotifs} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Bildirimler</Text>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Ders Hatırlatıcı</Text><Text style={styles.settingValue}>Açık</Text></View>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Streak Uyarısı</Text><Text style={styles.settingValue}>Açık</Text></View>
-            <View style={styles.settingRow}><Text style={styles.settingLabel}>Liderlik Tablosu</Text><Text style={styles.settingValue}>Açık</Text></View>
+            <Text style={styles.modalTitle}>{t('profile.notifications')}</Text>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Ders Hatirlatici')}</Text><Text style={styles.settingValue}>{tx('Acik')}</Text></View>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Streak Uyarisi')}</Text><Text style={styles.settingValue}>{tx('Acik')}</Text></View>
+            <View style={styles.settingRow}><Text style={styles.settingLabel}>{tx('Liderlik Tablosu')}</Text><Text style={styles.settingValue}>{tx('Acik')}</Text></View>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowNotifs(false)}>
-              <Text style={styles.modalCloseText}>Kapat</Text>
+              <Text style={styles.modalCloseText}>{tx('Kapat')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Yardim Modal */}
       <Modal visible={showHelp} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Yardım</Text>
-            <Text style={styles.helpText}>LinguaLeap, dil öğrenmeyi eğlenceli hale getiren bir uygulamadır.</Text>
-            <Text style={styles.helpText}>Derslerden XP kazanarak seviye atla, seriyi koruyarak başarılar aç!</Text>
-            <Text style={styles.helpText}>Sorun veya önerilerin için:</Text>
+            <Text style={styles.modalTitle}>{t('profile.help')}</Text>
+            <Text style={styles.helpText}>{tx('LinguaLeap, dil ogrenmeyi eglenceli hale getiren bir uygulamadir.')}</Text>
+            <Text style={styles.helpText}>{tx('Derslerden XP kazanarak seviye atla, seriyi koruyarak basarilar ac!')}</Text>
+            <Text style={styles.helpText}>{tx('Sorun veya onerilerin icin:')}</Text>
             <Text style={[styles.helpText, { color: COLORS.blue, ...FONTS.bold }]}>destek@lingualeap.app</Text>
             <TouchableOpacity style={styles.modalClose} onPress={() => setShowHelp(false)}>
-              <Text style={styles.modalCloseText}>Kapat</Text>
+              <Text style={styles.modalCloseText}>{tx('Kapat')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -245,11 +265,11 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: COLORS.wolf, ...FONTS.medium, marginTop: 2 },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 18, color: COLORS.owl, ...FONTS.bold, marginBottom: 12 },
-  achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  achievementCard: { width: '22%', backgroundColor: COLORS.white, borderRadius: 14, padding: 10, alignItems: 'center', borderWidth: 2, borderColor: COLORS.swan, flexGrow: 1, position: 'relative' },
+  achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
+  achievementCard: { width: '30.5%', minHeight: 98, backgroundColor: COLORS.white, borderRadius: 14, padding: 10, alignItems: 'center', borderWidth: 2, borderColor: COLORS.swan, position: 'relative' },
   achievementLocked: { backgroundColor: COLORS.polar, opacity: 0.6 },
   achievementIcon: { fontSize: 22, marginBottom: 4 },
-  achievementTitle: { fontSize: 9, color: COLORS.eel, ...FONTS.medium, textAlign: 'center' },
+  achievementTitle: { fontSize: 10, lineHeight: 12, color: COLORS.eel, ...FONTS.medium, textAlign: 'center' },
   unlockedBadge: { position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.white },
   menu: { backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, borderColor: COLORS.swan, overflow: 'hidden', marginBottom: 16 },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.swan, gap: 12 },
@@ -271,4 +291,9 @@ const styles = StyleSheet.create({
   settingLabel: { fontSize: 15, color: COLORS.eel, ...FONTS.medium },
   settingValue: { fontSize: 14, color: COLORS.wolf, ...FONTS.regular },
   helpText: { fontSize: 14, color: COLORS.eel, lineHeight: 22, marginBottom: 8 },
+  resetButton: { marginTop: 12, padding: 14, borderRadius: 16, backgroundColor: COLORS.red, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.redDark },
+  resetButtonText: { fontSize: 14, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.5 },
 });
+
+
+
