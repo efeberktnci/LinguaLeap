@@ -78,7 +78,7 @@ function MainNavigator() {
 }
 
 const RootNavigator: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { profile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -88,7 +88,7 @@ const RootNavigator: React.FC = () => {
     );
   }
 
-  return user ? <MainNavigator /> : <AuthNavigator />;
+  return profile ? <MainNavigator /> : <AuthNavigator />;
 };
 
 export default RootNavigator;

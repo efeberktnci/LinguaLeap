@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
 import { Lesson, LessonType } from '../types';
@@ -12,68 +12,151 @@ const ICON_MAP: Record<LessonType, keyof typeof Ionicons.glyphMap> = {
 };
 
 interface LessonNodeProps {
-  lesson: Lesson;
+  lesson: Lesson & {
+    locked?: boolean;
+    current?: boolean;
+    completed?: boolean;
+  };
   unitColor: string;
   unitShadow: string;
   onPress?: (lesson: Lesson) => void;
-  index: number;
 }
 
-const LessonNode: React.FC<LessonNodeProps> = ({ lesson, unitColor, unitShadow, onPress, index }) => {
-  const isTrophy = lesson.type === 'trophy';
-  const nodeSize = isTrophy ? 72 : 64;
-  const iconSize = isTrophy ? 28 : 22;
+const LessonNode: React.FC<LessonNodeProps> = ({
+  lesson,
+  unitColor,
+  unitShadow,
+  onPress,
+}) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const glowOpacity = useRef(new Animated.Value(0.18)).current;
+
+  useEffect(() => {
+    if (!lesson.current || lesson.locked) return;
+
+    const anim = Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scale, {
+            toValue: 1.08,
+            duration: 850,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scale, {
+            toValue: 1,
+            duration: 850,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(glowOpacity, {
+            toValue: 0.42,
+            duration: 850,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowOpacity, {
+            toValue: 0.18,
+            duration: 850,
+            useNativeDriver: false,
+          }),
+        ]),
+      ])
+    );
+
+    anim.start();
+
+    return () => {
+      anim.stop();
+    };
+  }, [lesson.current, lesson.locked, glowOpacity, scale]);
+
+  const handlePress = () => {
+    if (lesson.locked) return;
+    onPress?.(lesson);
+  };
+
+  const isLocked = !!lesson.locked;
+  const isCompleted = !!lesson.completed;
 
   let bgColor = unitColor;
-  let borderColor = unitShadow;
+  let shadowColor = unitShadow;
   let iconColor = COLORS.white;
 
-  if (lesson.locked) {
+  if (isLocked) {
     bgColor = COLORS.swan;
-    borderColor = COLORS.borderDark;
+    shadowColor = COLORS.borderDark;
     iconColor = COLORS.hare;
-  } else if (lesson.completed && lesson.crowns >= lesson.maxCrowns) {
-    bgColor = '#FFD700';
-    borderColor = '#DAA520';
+  } else if (isCompleted) {
+    bgColor = unitColor;
+    shadowColor = unitShadow;
+    iconColor = COLORS.white;
   }
 
-  const offsets = [0, 30, 45, 30, 0, -30, -45, -30];
-  const offsetX = offsets[index % offsets.length];
-
   return (
-    <View style={[styles.wrapper, { marginLeft: offsetX }]}>
+    <View style={styles.wrapper}>
       <TouchableOpacity
-        onPress={() => !lesson.locked && onPress?.(lesson)}
-        activeOpacity={lesson.locked ? 1 : 0.7}
-        disabled={lesson.locked}
+        onPress={handlePress}
+        activeOpacity={isLocked ? 1 : 0.82}
+        disabled={isLocked}
       >
-        <View style={[styles.shadow, { width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2, backgroundColor: borderColor, top: 4 }]} />
-        <View style={[styles.node, { width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2, backgroundColor: bgColor }]}>
-          <Ionicons name={ICON_MAP[lesson.type] ?? 'star'} size={iconSize} color={iconColor} />
-          {lesson.completed && !isTrophy && (
-            <View style={styles.crownRow}>
-              {Array.from({ length: lesson.maxCrowns }).map((_, i) => (
-                <Text key={i} style={[styles.crownDot, i < lesson.crowns && styles.crownDotActive]}>
-                  {i < lesson.crowns ? '♛' : '○'}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
-        {lesson.current && (
-          <View style={styles.currentIndicator}>
-            <View style={styles.startBadge}>
-              <Text style={styles.startText}>BAŞLA</Text>
-            </View>
-          </View>
+        {!isLocked && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.glow,
+              {
+                backgroundColor: unitColor,
+                opacity: glowOpacity,
+              },
+            ]}
+          />
         )}
-        {lesson.locked && (
+
+        <View
+          style={[
+            styles.shadow,
+            {
+              backgroundColor: shadowColor,
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            styles.node,
+            {
+              backgroundColor: bgColor,
+              transform: [{ scale }],
+            },
+          ]}
+        >
+          <Ionicons
+            name={ICON_MAP[lesson.type] ?? 'star'}
+            size={28}
+            color={iconColor}
+          />
+        </Animated.View>
+
+        {isLocked && (
           <View style={styles.lockOverlay}>
             <Ionicons name="lock-closed" size={16} color={COLORS.wolf} />
           </View>
         )}
+
+        {isCompleted && !isLocked && (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark" size={14} color={COLORS.white} />
+          </View>
+        )}
       </TouchableOpacity>
-      <Text style={[styles.title, lesson.locked && styles.titleLocked]} numberOfLines={1}>
+
+      <Text
+        style={[
+          styles.title,
+          isLocked && styles.titleLocked,
+        ]}
+        numberOfLines={1}
+      >
         {lesson.title}
       </Text>
     </View>
@@ -83,16 +166,66 @@ const LessonNode: React.FC<LessonNodeProps> = ({ lesson, unitColor, unitShadow, 
 export default LessonNode;
 
 const styles = StyleSheet.create({
-  wrapper: { alignItems: 'center', marginVertical: 6 },
-  shadow: { position: 'absolute', left: 0 },
-  node: { alignItems: 'center', justifyContent: 'center' },
-  crownRow: { flexDirection: 'row', position: 'absolute', bottom: -2, gap: 1 },
-  crownDot: { fontSize: 7, color: COLORS.hare },
-  crownDotActive: { color: '#FFD700', fontSize: 8 },
-  currentIndicator: { position: 'absolute', top: -36, alignSelf: 'center', left: '50%', marginLeft: -30 },
-  startBadge: { backgroundColor: COLORS.primary, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  startText: { color: COLORS.white, fontSize: 12, ...FONTS.bold, letterSpacing: 1 },
-  lockOverlay: { position: 'absolute', bottom: -2, right: -2, backgroundColor: COLORS.white, borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.swan },
-  title: { marginTop: 8, fontSize: 12, color: COLORS.eel, ...FONTS.medium },
-  titleLocked: { color: COLORS.hare },
+  wrapper: {
+    width: 72,
+    alignItems: 'center',
+  },
+  glow: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    left: -9,
+    top: -9,
+  },
+  shadow: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    top: 5,
+  },
+  node: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockOverlay: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.swan,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completedBadge: {
+    position: 'absolute',
+    left: -3,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    marginTop: 10,
+    fontSize: 12,
+    color: COLORS.eel,
+    textAlign: 'center',
+    ...FONTS.medium,
+  },
+  titleLocked: {
+    color: COLORS.hare,
+  },
 });

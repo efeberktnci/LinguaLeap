@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,8 +13,25 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
 const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   const { questions } = route.params;
   const lesson = useLesson(questions);
+
   const { user } = useUser();
   const { user: authUser, refreshProfile } = useAuth();
+
+  // LESSON FINISH FIREBASE SAVE
+  useEffect(() => {
+    const saveLessonProgress = async () => {
+      if (!lesson.isFinished) return;
+
+      try {
+        await lesson.finishLesson(route.params.lesson.id);
+        await refreshProfile();
+      } catch (error) {
+        console.log('FINISH LESSON ERROR:', error);
+      }
+    };
+
+    saveLessonProgress();
+  }, [lesson.isFinished]);
 
   const handleClose = () => {
     Alert.alert('Dersten çık', 'Emin misin? İlerleme kaybolacak.', [
@@ -43,7 +60,6 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
      navigation.goBack();
 
-     Alert.alert("Canlar Yenilendi!", "5 can eklendi.");
    } catch (error) {
      console.log("REFILL ERROR:", error);
      Alert.alert("Hata", "Canlar yenilenemedi.");
@@ -85,6 +101,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           <Text style={[styles.finishedTitle, { color: lesson.passed ? COLORS.primaryDark : COLORS.red }]}>
             {lesson.passed ? 'Ders Tamamlandı!' : 'Canların Bitti!'}
           </Text>
+
           <View style={styles.statsGrid}>
             {[
               { value: lesson.totalXP, label: 'Toplam XP' },
@@ -97,6 +114,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
             ))}
           </View>
+
           <View style={styles.accuracySection}>
             <Text style={styles.accuracyLabel}>Performans</Text>
             <ProgressBar
@@ -106,12 +124,16 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
               style={{ marginTop: 8 }}
             />
           </View>
+
           <TouchableOpacity
             style={[styles.finishButton, { backgroundColor: lesson.passed ? COLORS.primary : COLORS.blue }]}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.finishButtonText}>{lesson.passed ? 'DEVAM ET' : 'TEKRAR DENE'}</Text>
+            <Text style={styles.finishButtonText}>
+              {lesson.passed ? 'DEVAM ET' : 'TEKRAR DENE'}
+            </Text>
           </TouchableOpacity>
+
         </View>
       </SafeAreaView>
     );
@@ -131,20 +153,26 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+
       <View style={styles.header}>
+
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <Ionicons name="close" size={28} color={COLORS.hare} />
         </TouchableOpacity>
+
         <View style={styles.progressBarContainer}>
           <ProgressBar progress={lesson.progress} height={14} color={COLORS.primary} />
         </View>
+
         <View style={styles.heartsContainer}>
           <Text style={styles.heartText}>❤️</Text>
           <Text style={styles.heartCount}>{user?.hearts ?? 0}</Text>
         </View>
+
       </View>
 
       <View style={styles.questionContainer}>
+
         <View style={styles.typeBadge}>
           <Text style={styles.typeBadgeText}>
             {q.type === 'translate' && '🔄 Çeviri'}
@@ -154,80 +182,148 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
             {q.type === 'match' && '🔗 Eşleştirme'}
           </Text>
         </View>
+
         <Text style={styles.questionText}>{q.question}</Text>
 
         {(q.prompt || q.sentence) && (
           <View style={styles.promptCard}>
+
             {q.type === 'listen' && (
               <TouchableOpacity style={styles.speakerButton}>
                 <Ionicons name="volume-high" size={28} color={COLORS.blue} />
               </TouchableOpacity>
             )}
+
             <Text style={styles.promptText}>{q.prompt ?? q.sentence}</Text>
+
           </View>
         )}
 
         <View style={styles.optionsContainer}>
+
           {q.options?.map((option, index) => {
+
             const isSelected = lesson.selectedAnswer === option;
             const isAnswer = option === q.correctAnswer;
+
             let optionStyle = [styles.option];
             let textStyle = [styles.optionText];
 
             if (lesson.showResult) {
+
               if (isAnswer) {
                 optionStyle = [styles.option, styles.optionCorrect];
                 textStyle = [styles.optionText, styles.optionTextCorrect];
-              } else if (isSelected && !isAnswer) {
+              }
+
+              else if (isSelected && !isAnswer) {
                 optionStyle = [styles.option, styles.optionIncorrect];
                 textStyle = [styles.optionText, styles.optionTextIncorrect];
               }
-            } else if (isSelected) {
+
+            }
+
+            else if (isSelected) {
               optionStyle = [styles.option, styles.optionSelected];
               textStyle = [styles.optionText, styles.optionTextSelected];
             }
 
             return (
-              <TouchableOpacity key={index} style={optionStyle} onPress={() => lesson.selectAnswer(option)} disabled={lesson.showResult} activeOpacity={0.7}>
+              <TouchableOpacity
+                key={index}
+                style={optionStyle}
+                onPress={() => lesson.selectAnswer(option)}
+                disabled={lesson.showResult}
+                activeOpacity={0.7}
+              >
+
                 <View style={styles.optionContent}>
-                  <View style={[styles.optionIndex, isSelected && !lesson.showResult && styles.optionIndexSelected]}>
-                    <Text style={[styles.optionIndexText, isSelected && !lesson.showResult && styles.optionIndexTextSelected]}>{index + 1}</Text>
+
+                  <View style={[
+                    styles.optionIndex,
+                    isSelected && !lesson.showResult && styles.optionIndexSelected
+                  ]}>
+
+                    <Text style={[
+                      styles.optionIndexText,
+                      isSelected && !lesson.showResult && styles.optionIndexTextSelected
+                    ]}>
+                      {index + 1}
+                    </Text>
+
                   </View>
+
                   <Text style={textStyle}>{option}</Text>
-                  {lesson.showResult && isAnswer && <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} style={{ marginLeft: 'auto' }} />}
-                  {lesson.showResult && isSelected && !isAnswer && <Ionicons name="close-circle" size={24} color={COLORS.red} style={{ marginLeft: 'auto' }} />}
+
+                  {lesson.showResult && isAnswer &&
+                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} style={{ marginLeft: 'auto' }} />
+                  }
+
+                  {lesson.showResult && isSelected && !isAnswer &&
+                    <Ionicons name="close-circle" size={24} color={COLORS.red} style={{ marginLeft: 'auto' }} />
+                  }
+
                 </View>
+
               </TouchableOpacity>
             );
           })}
+
         </View>
+
       </View>
 
-      <View style={[styles.bottomBar, lesson.showResult && (lesson.isCorrect ? styles.bottomBarCorrect : styles.bottomBarIncorrect)]}>
+      <View style={[
+        styles.bottomBar,
+        lesson.showResult && (lesson.isCorrect ? styles.bottomBarCorrect : styles.bottomBarIncorrect)
+      ]}>
+
         {lesson.showResult && (
+
           <View style={styles.resultFeedback}>
-            <Text style={styles.resultIcon}>{lesson.isCorrect ? '✅' : '❌'}</Text>
+
+            <Text style={styles.resultIcon}>
+              {lesson.isCorrect ? '✅' : '❌'}
+            </Text>
+
             <View>
-              <Text style={[styles.resultText, { color: lesson.isCorrect ? COLORS.primaryDark : COLORS.redDark }]}>
+
+              <Text style={[
+                styles.resultText,
+                { color: lesson.isCorrect ? COLORS.primaryDark : COLORS.redDark }
+              ]}>
                 {lesson.isCorrect ? 'Harika!' : 'Yanlış!'}
               </Text>
-              {!lesson.isCorrect && <Text style={styles.correctAnswerText}>Doğrusu: {q.correctAnswer}</Text>}
+
+              {!lesson.isCorrect &&
+                <Text style={styles.correctAnswerText}>
+                  Doğrusu: {q.correctAnswer}
+                </Text>
+              }
+
             </View>
+
           </View>
+
         )}
+
         <TouchableOpacity
           style={[
             styles.checkButton,
             !lesson.selectedAnswer && !lesson.showResult && styles.checkButtonDisabled,
             lesson.showResult && lesson.isCorrect && styles.checkButtonCorrect,
-            lesson.showResult && !lesson.isCorrect && styles.checkButtonIncorrect,
+            lesson.showResult && !lesson.isCorrect && styles.checkButtonIncorrect
           ]}
           onPress={lesson.showResult ? lesson.continueLesson : lesson.checkAnswer}
           disabled={!lesson.selectedAnswer && !lesson.showResult}
         >
-          <Text style={styles.checkButtonText}>{lesson.showResult ? 'DEVAM ET' : 'KONTROL ET'}</Text>
+          <Text style={styles.checkButtonText}>
+            {lesson.showResult ? 'DEVAM ET' : 'KONTROL ET'}
+          </Text>
         </TouchableOpacity>
+
       </View>
+
     </SafeAreaView>
   );
 

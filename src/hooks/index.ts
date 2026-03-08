@@ -1,4 +1,4 @@
-import { useContext, useMemo, useCallback, useState, useEffect } from 'react';
+import { useContext, useMemo, useCallback, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { calculateProgress } from '../utils/helpers';
 import * as firestoreService from '../services/firestore';
@@ -9,41 +9,60 @@ export function useAuth() {
 }
 
 export function useUser() {
-  const { profile, user } = useContext(AuthContext);
+  const { profile, user: authUser } = useContext(AuthContext);
 
   const levelProgress = useMemo(
-    () => calculateProgress(profile?.currentXP ?? 0, profile?.xpToNextLevel ?? 100),
-    [profile?.currentXP, profile?.xpToNextLevel],
+    () =>
+      calculateProgress(
+        profile?.currentXP ?? 0,
+        profile?.xpToNextLevel ?? 100
+      ),
+    [profile?.currentXP, profile?.xpToNextLevel]
   );
 
   const dailyProgress = useMemo(
-    () => calculateProgress(Math.min(profile?.dailyXPEarned ?? 0, 250), 250),
-    [profile?.dailyXPEarned],
+    () =>
+      calculateProgress(
+        Math.min(profile?.dailyXPEarned ?? 0, 250),
+        250
+      ),
+    [profile?.dailyXPEarned]
   );
 
   const dailyGoalReached = (profile?.dailyXPEarned ?? 0) >= 250;
 
   const unlockedAchievements = useMemo(
     () => profile?.achievements?.filter((a) => a.unlocked).length ?? 0,
-    [profile?.achievements],
+    [profile?.achievements]
   );
 
   const addXP = useCallback(async (amount: number) => {
-    if (!user?.uid || !user?.idToken) return;
-    await firestoreService.addXP(user.uid, amount, user.idToken);
-  }, [user?.uid, user?.idToken]);
+    if (!authUser?.uid || !authUser?.idToken) return;
+    await firestoreService.addXP(authUser.uid, amount, authUser.idToken);
+  }, [authUser?.uid, authUser?.idToken]);
 
   const spendGems = useCallback(async (amount: number) => {
-    if (!user?.uid || !user?.idToken) return false;
-    return firestoreService.spendGems(user.uid, amount, user.idToken);
-  }, [user?.uid, user?.idToken]);
+    if (!authUser?.uid || !authUser?.idToken) return false;
+    return firestoreService.spendGems(authUser.uid, amount, authUser.idToken);
+  }, [authUser?.uid, authUser?.idToken]);
 
   const refillHearts = useCallback(async () => {
-    if (!user?.uid || !user?.idToken) return false;
-    return firestoreService.refillHearts(user.uid, user.idToken);
-  }, [user?.uid, user?.idToken]);
+    if (!authUser?.uid || !authUser?.idToken) return false;
+    return firestoreService.refillHearts(authUser.uid, authUser.idToken);
+  }, [authUser?.uid, authUser?.idToken]);
 
-  return { user: profile, uid: user?.uid ?? null, levelProgress, dailyProgress, dailyGoalReached, unlockedAchievements, addXP, spendGems, refillHearts };
+  return {
+    user: profile,
+    profile,
+    uid: authUser?.uid ?? null,
+    levelProgress,
+    dailyProgress,
+    dailyGoalReached,
+    unlockedAchievements,
+    addXP,
+    spendGems,
+    refillHearts
+  };
 }
 
 interface LessonState {
@@ -57,9 +76,8 @@ interface LessonState {
 }
 
 export function useLesson(questions: QuizQuestion[]) {
-  const { user, profile } = useContext(AuthContext);
+  const { user, profile, refreshProfile } = useContext(AuthContext);
 
-  // Hearts Firebase'den geliyor, local state yok
   const hearts = profile?.hearts ?? 5;
 
   const [state, setState] = useState<LessonState>({
@@ -72,45 +90,74 @@ export function useLesson(questions: QuizQuestion[]) {
     isFinished: false,
   });
 
-  const currentQuestion = questions && questions.length > 0
-    ? questions[state.currentIndex] ?? null
-    : null;
-  const progress = (state.currentIndex + (state.showResult ? 1 : 0)) / questions.length;
-  const accuracy = questions.length > 0 ? Math.round((state.score / questions.length) * 100) : 0;
+  const currentQuestion =
+    questions && questions.length > 0
+      ? questions[state.currentIndex] ?? null
+      : null;
+
+  const progress =
+    (state.currentIndex + (state.showResult ? 1 : 0)) /
+    questions.length;
+
+  const accuracy =
+    questions.length > 0
+      ? Math.round((state.score / questions.length) * 100)
+      : 0;
+
   const passed = hearts > 0;
 
-  const selectAnswer = useCallback((answer: string) => {
-    if (state.showResult) return;
-    setState((prev) => ({ ...prev, selectedAnswer: answer }));
-  }, [state.showResult]);
+  const selectAnswer = useCallback(
+    (answer: string) => {
+      if (state.showResult) return;
+      setState((prev) => ({ ...prev, selectedAnswer: answer }));
+    },
+    [state.showResult]
+  );
 
   const checkAnswer = useCallback(async () => {
     if (!currentQuestion) return;
-    const correct = state.selectedAnswer === currentQuestion.correctAnswer;
+
+    const correct =
+      state.selectedAnswer === currentQuestion.correctAnswer;
 
     setState((prev) => ({
       ...prev,
       isCorrect: correct,
       showResult: true,
       score: correct ? prev.score + 1 : prev.score,
-      totalXP: correct ? prev.totalXP + (currentQuestion.xp ?? 10) : prev.totalXP,
+      totalXP: correct
+        ? prev.totalXP + (currentQuestion.xp ?? 10)
+        : prev.totalXP,
     }));
 
-    // Firebase'e yaz - hearts orada güncelleniyor
     if (user?.uid && user?.idToken) {
       if (correct) {
-        await firestoreService.addXP(user.uid, currentQuestion.xp ?? 10, user.idToken);
+        await firestoreService.addXP(
+          user.uid,
+          currentQuestion.xp ?? 10,
+          user.idToken
+        );
       } else {
-        await firestoreService.loseHeart(user.uid, user.idToken);
+        await firestoreService.loseHeart(
+          user.uid,
+          user.idToken
+        );
       }
+
+      await refreshProfile();
     }
   }, [state.selectedAnswer, currentQuestion, user?.uid, user?.idToken]);
 
   const continueLesson = useCallback(() => {
-    if (!questions || hearts <= 0 || state.currentIndex + 1 >= questions.length) {
+    if (
+      !questions ||
+      hearts <= 0 ||
+      state.currentIndex + 1 >= questions.length
+    ) {
       setState((prev) => ({ ...prev, isFinished: true }));
       return;
     }
+
     setState((prev) => ({
       ...prev,
       currentIndex: prev.currentIndex + 1,
@@ -120,10 +167,23 @@ export function useLesson(questions: QuizQuestion[]) {
     }));
   }, [hearts, state.currentIndex, questions.length]);
 
-  const finishLesson = useCallback(async (lessonId: string) => {
-    if (!user?.uid || !user?.idToken) return;
-    await firestoreService.completeLesson(user.uid, lessonId, state.score, questions.length, user.idToken);
-  }, [user?.uid, user?.idToken, state.score, questions.length]);
+  const finishLesson = useCallback(
+    async (lessonId: string) => {
+      if (!user?.uid || !user?.idToken) return;
+
+      const perfect = state.score === questions.length;
+
+      await firestoreService.completeLesson(
+        user.uid,
+        lessonId,
+        state.score,
+        questions.length,
+        perfect,
+        user.idToken
+      );
+    },
+    [user?.uid, user?.idToken, state.score, questions.length]
+  );
 
   return {
     ...state,
@@ -138,3 +198,4 @@ export function useLesson(questions: QuizQuestion[]) {
     finishLesson,
   };
 }
+
