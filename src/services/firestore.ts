@@ -136,9 +136,15 @@ export async function loseHeart(uid: string, token: string): Promise<void> {
 }
 
 export async function refillHearts(uid: string, token: string): Promise<boolean> {
+
   const profile = await getUserProfile(uid, token);
-  if (!profile || profile.gems < 350) return false;
-  await setDocument(USERS, uid, { ...profile, hearts: profile.maxHearts, gems: profile.gems - 350 }, token);
+  if (!profile) return false;
+
+  await setDocument(USERS, uid, {
+    ...profile,
+    hearts: profile.maxHearts
+  }, token);
+
   return true;
 }
 
@@ -189,20 +195,31 @@ function checkAchievements(
   updates: { totalXP: number; streak: number; completedLessons: string[] },
 ) {
   const achs = [...(profile.achievements || [])];
+
   const rules: Record<string, () => boolean> = {
     ach_1: () => updates.streak >= 7,
     ach_2: () => updates.streak >= 14,
     ach_3: () => updates.streak >= 30,
     ach_4: () => updates.totalXP >= 1000,
-    ach_5: () => false, // Kusursuz Atış - perfect lesson'da açılır
+    ach_5: () => false,
     ach_7: () => updates.completedLessons.length >= 1,
     ach_6: () => updates.completedLessons.length >= 50,
     ach_8: () => updates.completedLessons.length >= 10,
   };
+
   for (const ach of achs) {
     if (!ach.unlocked && rules[ach.id]?.()) {
       ach.unlocked = true;
     }
   }
+
   return achs;
 }
+
+
+
+
+
+
+
+

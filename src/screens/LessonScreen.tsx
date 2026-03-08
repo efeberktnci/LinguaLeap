@@ -4,14 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS, FONTS } from '../theme/colors';
 import { RootStackParamList } from '../types';
-import { useLesson } from '../hooks';
+import { useLesson, useUser, useAuth } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
+import * as firestoreService from '../services/firestore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
 
 const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   const { questions } = route.params;
   const lesson = useLesson(questions);
+  const { user } = useUser();
+  const { user: authUser, refreshProfile } = useAuth();
 
   const handleClose = () => {
     Alert.alert('Dersten çık', 'Emin misin? İlerleme kaybolacak.', [
@@ -19,6 +22,60 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       { text: 'Çık', style: 'destructive', onPress: () => navigation.goBack() },
     ]);
   };
+
+ const handleRefillHearts = async () => {
+   if (!authUser?.uid || !authUser?.idToken) return;
+
+   try {
+     const success = await firestoreService.refillHearts(
+       authUser.uid,
+       authUser.idToken
+     );
+
+     if (!success) {
+       Alert.alert("Yetersiz Gem", "Canları yenilemek için 350 gem gerekiyor.");
+       return;
+     }
+
+     await refreshProfile();
+
+     Alert.alert('Canlar Yenilendi!', '5 can eklendi.');
+
+     navigation.goBack();
+
+     Alert.alert("Canlar Yenilendi!", "5 can eklendi.");
+   } catch (error) {
+     console.log("REFILL ERROR:", error);
+     Alert.alert("Hata", "Canlar yenilenemedi.");
+   }
+ };
+
+  // Canlar bitti ekranı
+  if ((user?.hearts ?? 0) <= 0 && !lesson.isFinished) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#FFF5F5' }]}>
+        <View style={styles.noHeartsContainer}>
+          <Text style={styles.noHeartsEmoji}>💔</Text>
+          <Text style={styles.noHeartsTitle}>Canların Bitti!</Text>
+          <Text style={styles.noHeartsDesc}>Devam etmek için canlarını yenile.</Text>
+
+          <View style={styles.heartsDisplay}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Text key={i} style={styles.heartIcon}>🤍</Text>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.refillButton} onPress={handleRefillHearts}>
+            <Text style={styles.refillButtonText}>CANLARI YENİLE (ÜCRETSİZ)</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.exitButtonText}>Çıkış Yap</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (lesson.isFinished) {
     return (
@@ -61,7 +118,16 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   const q = lesson.currentQuestion;
-  if (!q) return null;
+
+  if (!q) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 50 }}>
+          Ders yükleniyor...
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,8 +139,8 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           <ProgressBar progress={lesson.progress} height={14} color={COLORS.primary} />
         </View>
         <View style={styles.heartsContainer}>
-          <Text style={styles.heartIcon}>❤️</Text>
-          <Text style={styles.heartCount}>{lesson.hearts}</Text>
+          <Text style={styles.heartText}>❤️</Text>
+          <Text style={styles.heartCount}>{user?.hearts ?? 0}</Text>
         </View>
       </View>
 
@@ -164,6 +230,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       </View>
     </SafeAreaView>
   );
+
 };
 
 export default LessonScreen;
@@ -174,7 +241,7 @@ const styles = StyleSheet.create({
   closeButton: { padding: 4 },
   progressBarContainer: { flex: 1 },
   heartsContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  heartIcon: { fontSize: 18 },
+  heartText: { fontSize: 18 },
   heartCount: { fontSize: 16, color: COLORS.red, ...FONTS.bold },
   questionContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
   typeBadge: { alignSelf: 'flex-start', backgroundColor: COLORS.snow, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16 },
@@ -220,4 +287,15 @@ const styles = StyleSheet.create({
   accuracyLabel: { fontSize: 14, color: COLORS.wolf, ...FONTS.semiBold },
   finishButton: { width: '100%', borderRadius: 16, padding: 18, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
   finishButtonText: { fontSize: 17, color: COLORS.white, ...FONTS.bold, letterSpacing: 1 },
+  // No hearts screen
+  noHeartsContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  noHeartsEmoji: { fontSize: 64, marginBottom: 16 },
+  noHeartsTitle: { fontSize: 26, color: COLORS.red, ...FONTS.bold, marginBottom: 8 },
+  noHeartsDesc: { fontSize: 15, color: COLORS.wolf, textAlign: 'center', marginBottom: 24 },
+  heartsDisplay: { flexDirection: 'row', gap: 8, marginBottom: 32 },
+  heartIcon: { fontSize: 36 },
+  refillButton: { backgroundColor: COLORS.primary, borderRadius: 16, padding: 18, width: '100%', alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark, marginBottom: 12 },
+  refillButtonText: { fontSize: 16, color: COLORS.white, ...FONTS.bold, letterSpacing: 1 },
+  exitButton: { padding: 14, width: '100%', alignItems: 'center' },
+  exitButtonText: { fontSize: 16, color: COLORS.wolf, ...FONTS.semiBold },
 });

@@ -72,7 +72,9 @@ export function useLesson(questions: QuizQuestion[]) {
     isFinished: false,
   });
 
-  const currentQuestion = questions[state.currentIndex];
+  const currentQuestion = questions && questions.length > 0
+    ? questions[state.currentIndex] ?? null
+    : null;
   const progress = (state.currentIndex + (state.showResult ? 1 : 0)) / questions.length;
   const accuracy = questions.length > 0 ? Math.round((state.score / questions.length) * 100) : 0;
   const passed = hearts > 0;
@@ -83,7 +85,7 @@ export function useLesson(questions: QuizQuestion[]) {
   }, [state.showResult]);
 
   const checkAnswer = useCallback(async () => {
-    if (!state.selectedAnswer || !currentQuestion) return;
+    if (!currentQuestion) return;
     const correct = state.selectedAnswer === currentQuestion.correctAnswer;
 
     setState((prev) => ({
@@ -105,7 +107,7 @@ export function useLesson(questions: QuizQuestion[]) {
   }, [state.selectedAnswer, currentQuestion, user?.uid, user?.idToken]);
 
   const continueLesson = useCallback(() => {
-    if (hearts <= 0 || state.currentIndex + 1 >= questions.length) {
+    if (!questions || hearts <= 0 || state.currentIndex + 1 >= questions.length) {
       setState((prev) => ({ ...prev, isFinished: true }));
       return;
     }
