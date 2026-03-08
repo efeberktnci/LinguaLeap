@@ -402,8 +402,12 @@ export const getLessonQuestions = (lesson: Lesson, uiLanguage: AppLanguage, targ
       prompt: q6Word,
       audioText: q6Word,
       audioLanguage: getSpeechLanguageCode(targetLanguage),
+      options: buildOptions(q6Word, targetPool, globalTargetPool, globalTargetPool, lesson.id, 6),
       correctAnswer: q6Word,
       xp: 15,
     },
   ];
 };
+
+
+

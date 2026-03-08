@@ -4,19 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Platform,
   Alert,
   Animated,
   Easing,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Speech from 'expo-speech';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
 
 import { COLORS, FONTS } from '../theme/colors';
 import { RootStackParamList } from '../types';
@@ -25,6 +21,23 @@ import ProgressBar from '../components/ProgressBar';
 import * as firestoreService from '../services/firestore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
+
+type RecognitionPermission = { granted: boolean };
+type RecognitionSubscription = { remove?: () => void };
+type SpeechRecognitionModuleLike = {
+  addListener?: (eventName: string, listener: (event?: any) => void) => RecognitionSubscription;
+  requestPermissionsAsync?: () => Promise<RecognitionPermission>;
+  start?: (options: any) => void;
+  stop?: () => void;
+};
+
+let SpeechRecognitionModule: SpeechRecognitionModuleLike | null = null;
+try {
+  const speechRecognitionPkg = require('expo-speech-recognition');
+  SpeechRecognitionModule = (speechRecognitionPkg?.ExpoSpeechRecognitionModule as SpeechRecognitionModuleLike) ?? null;
+} catch {
+  SpeechRecognitionModule = null;
+}
 
 const OPTION_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)', 'f)'];
 
@@ -41,9 +54,36 @@ const normalizeAnswer = (value: string) =>
     .toLocaleLowerCase('tr-TR')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\p{N}\s]/gu, '')
+    .replace(/[^\w\sçğıöşüÇĞİÖŞÜáéíóúÁÉÍÓÚñÑäöüÄÖÜßàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛ]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+const levenshteinDistance = (a: string, b: string) => {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const dp: number[][] = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+  for (let i = 0; i < rows; i += 1) dp[i][0] = i;
+  for (let j = 0; j < cols; j += 1) dp[0][j] = j;
+
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+
+  return dp[a.length][b.length];
+};
+
+const pronunciationScore = (spoken: string, expected: string) => {
+  const s = normalizeAnswer(spoken);
+  const e = normalizeAnswer(expected);
+  if (!s || !e) return 0;
+  const distance = levenshteinDistance(s, e);
+  const maxLen = Math.max(s.length, e.length);
+  return maxLen === 0 ? 0 : 1 - distance / maxLen;
+};
 
 const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   const { questions } = route.params;
@@ -53,17 +93,21 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   const { user: authUser, refreshProfile } = useAuth();
 
   const q = lesson.currentQuestion;
+  const speechRecognitionAvailable = Boolean(SpeechRecognitionModule);
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [micLevel, setMicLevel] = useState(0.2);
   const [pronunciationMessage, setPronunciationMessage] = useState<string | null>(null);
 
   const pronunciationHandledRef = useRef(false);
   const soundBars = useRef([
-    new Animated.Value(0.25),
-    new Animated.Value(0.45),
-    new Animated.Value(0.35),
+    new Animated.Value(0.18),
+    new Animated.Value(0.34),
     new Animated.Value(0.5),
+    new Animated.Value(0.24),
+    new Animated.Value(0.44),
+    new Animated.Value(0.28),
   ]).current;
 
   const barAnimations = useMemo(
@@ -73,13 +117,13 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           Animated.sequence([
             Animated.timing(bar, {
               toValue: 0.95,
-              duration: 220 + index * 70,
+              duration: 180 + index * 40,
               easing: Easing.inOut(Easing.quad),
               useNativeDriver: false,
             }),
             Animated.timing(bar, {
               toValue: 0.2,
-              duration: 220 + index * 70,
+              duration: 180 + index * 40,
               easing: Easing.inOut(Easing.quad),
               useNativeDriver: false,
             }),
@@ -89,40 +133,59 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     [soundBars]
   );
 
-  useSpeechRecognitionEvent('start', () => {
-    setIsRecognizing(true);
-  });
+  useEffect(() => {
+    if (!SpeechRecognitionModule?.addListener) return;
 
-  useSpeechRecognitionEvent('end', () => {
-    setIsRecognizing(false);
-  });
+    const startSub = SpeechRecognitionModule.addListener('start', () => {
+      setIsRecognizing(true);
+      setMicLevel(0.2);
+    });
 
-  useSpeechRecognitionEvent('error', () => {
-    setIsRecognizing(false);
-    setPronunciationMessage('Mikrofon algılanamadı. Tekrar dene.');
-  });
+    const endSub = SpeechRecognitionModule.addListener('end', () => {
+      setIsRecognizing(false);
+      setMicLevel(0.2);
+    });
 
-  useSpeechRecognitionEvent('result', (event: any) => {
-    if (!q || q.type !== 'pronounce' || lesson.showResult || pronunciationHandledRef.current) return;
+    const errorSub = SpeechRecognitionModule.addListener('error', () => {
+      setIsRecognizing(false);
+      setMicLevel(0.2);
+      setPronunciationMessage('Mikrofon algılanamadı. Tekrar dene.');
+    });
 
-    const transcript = (event?.results?.[0]?.transcript ?? '').trim();
-    const isFinal = Boolean(event?.isFinal);
+    const volumeSub = SpeechRecognitionModule.addListener('volumechange', (event: any) => {
+      const raw = typeof event?.value === 'number' ? event.value : typeof event?.volume === 'number' ? event.volume : -2;
+      const normalized = Math.max(0, Math.min(1, (raw + 2) / 12));
+      setMicLevel(normalized);
+    });
 
-    if (!isFinal || !transcript) return;
+    const resultSub = SpeechRecognitionModule.addListener('result', (event: any) => {
+      if (!q || q.type !== 'pronounce' || lesson.showResult || pronunciationHandledRef.current) return;
 
-    pronunciationHandledRef.current = true;
-    const expected = (q.correctAnswer ?? '').trim();
+      const transcript = (event?.results?.[0]?.transcript ?? '').trim();
+      const isFinal = Boolean(event?.isFinal);
+      if (!isFinal || !transcript) return;
 
-    const isCorrect = normalizeAnswer(transcript) === normalizeAnswer(expected);
+      pronunciationHandledRef.current = true;
+      const expected = (q.correctAnswer ?? '').trim();
+      const score = pronunciationScore(transcript, expected);
+      const isCorrect = score >= 0.78 || normalizeAnswer(transcript).includes(normalizeAnswer(expected));
 
-    setPronunciationMessage(isCorrect ? 'Doğru telaffuz, harika!' : 'Yanlış telaffuz, tekrar dene.');
+      setPronunciationMessage(isCorrect ? 'Doğru telaffuz, harika!' : 'Yanlış telaffuz, tekrar dene.');
 
-    lesson.selectAnswer(isCorrect ? expected : transcript);
+      lesson.selectAnswer(isCorrect ? expected : transcript);
+      setTimeout(() => {
+        lesson.checkAnswer();
+      }, 140);
+    });
 
-    setTimeout(() => {
-      lesson.checkAnswer();
-    }, 140);
-  });
+    return () => {
+      startSub?.remove?.();
+      endSub?.remove?.();
+      errorSub?.remove?.();
+      volumeSub?.remove?.();
+      resultSub?.remove?.();
+    };
+  }, [q, lesson.showResult, lesson.selectAnswer, lesson.checkAnswer]);
 
   useEffect(() => {
     const saveLessonProgress = async () => {
@@ -141,32 +204,51 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
   useEffect(() => {
     pronunciationHandledRef.current = false;
-    setPronunciationMessage(null);
     setIsRecognizing(false);
-    ExpoSpeechRecognitionModule.stop();
-  }, [q?.id]);
+    setMicLevel(0.2);
+    SpeechRecognitionModule?.stop?.();
+
+    if (q?.type === 'pronounce' && !speechRecognitionAvailable) {
+      setPronunciationMessage('Mikrofon bu buildde hazır değil. Aşağıdan doğru kelimeyi seç.');
+    } else {
+      setPronunciationMessage(null);
+    }
+  }, [q?.id, q?.type, speechRecognitionAvailable]);
 
   useEffect(() => {
-    if (!isSpeaking) {
+    if (isRecognizing) {
       barAnimations.forEach((anim) => anim.stop());
+      const base = Math.max(0.15, Math.min(1, micLevel));
       soundBars.forEach((bar, idx) => {
-        bar.setValue(0.2 + (idx % 2) * 0.2);
+        const target = Math.min(1, base + (idx % 2 === 0 ? 0.1 : 0.25));
+        Animated.timing(bar, {
+          toValue: target,
+          duration: 80,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: false,
+        }).start();
       });
       return;
     }
 
-    const parallel = Animated.parallel(barAnimations, { stopTogether: true });
-    parallel.start();
+    if (isSpeaking) {
+      const parallel = Animated.parallel(barAnimations, { stopTogether: true });
+      parallel.start();
+      return () => {
+        parallel.stop();
+      };
+    }
 
-    return () => {
-      parallel.stop();
-    };
-  }, [isSpeaking, barAnimations, soundBars]);
+    barAnimations.forEach((anim) => anim.stop());
+    soundBars.forEach((bar, idx) => {
+      bar.setValue(0.2 + (idx % 2) * 0.16);
+    });
+  }, [isSpeaking, isRecognizing, micLevel, barAnimations, soundBars]);
 
   useEffect(
     () => () => {
       Speech.stop();
-      ExpoSpeechRecognitionModule.stop();
+      SpeechRecognitionModule?.stop?.();
     },
     []
   );
@@ -218,33 +300,42 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [q]);
 
   const handlePronunciationStart = useCallback(async () => {
-    if (!q || q.type !== 'pronounce' || lesson.showResult) return;
+    if (!q || q.type !== 'pronounce' || lesson.showResult || isRecognizing) return;
+
+    if (!SpeechRecognitionModule) {
+      setPronunciationMessage('Mikrofon bu buildde desteklenmiyor. Aşağıdan doğru kelimeyi seç.');
+      return;
+    }
 
     try {
-      const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      if (!permission.granted) {
+      const permission = await SpeechRecognitionModule.requestPermissionsAsync?.();
+      if (!permission?.granted) {
         Alert.alert('Mikrofon İzni Gerekli', 'Telaffuz testi için mikrofon izni vermelisin.');
         return;
       }
 
       pronunciationHandledRef.current = false;
-      setPronunciationMessage('Dinleniyor... Kelimeyi net söyle.');
+      setMicLevel(0.2);
+      setPronunciationMessage('Konuş... parmağını çekince dinleme bitecek.');
 
-      ExpoSpeechRecognitionModule.start({
+      SpeechRecognitionModule.start?.({
         lang: q.audioLanguage ?? 'en-US',
-        interimResults: false,
+        interimResults: true,
         maxAlternatives: 1,
         continuous: false,
+        volumeChangeEventOptions: { enabled: true, intervalMillis: 80 },
       });
     } catch {
       setPronunciationMessage('Mikrofon başlatılamadı. Tekrar dene.');
     }
-  }, [q, lesson.showResult]);
+  }, [q, lesson.showResult, isRecognizing]);
 
   const handlePronunciationStop = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    if (!isRecognizing) return;
+    SpeechRecognitionModule?.stop?.();
+    setPronunciationMessage('Dinleme bitti, sonuç işleniyor...');
     setIsRecognizing(false);
-  }, []);
+  }, [isRecognizing]);
 
   if ((user?.hearts ?? 0) <= 0 && !lesson.isFinished) {
     return (
@@ -363,7 +454,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
             <View style={styles.soundWaveWrap}>
               {soundBars.map((bar, idx) => (
                 <Animated.View
-                  key={idx}
+                  key={`listen-wave-${idx}`}
                   style={[
                     styles.soundBar,
                     {
@@ -382,21 +473,47 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         {q.type === 'pronounce' && (
           <View style={styles.pronounceCard}>
             <Text style={styles.pronounceWord}>{q.prompt}</Text>
-            <Text style={styles.pronounceSub}>{pronunciationMessage ?? 'Mikrofona bas ve telaffuz et'}</Text>
+            <Text style={styles.pronounceSub}>{pronunciationMessage ?? 'Mikrofon butonuna basılı tutarak konuş'}</Text>
+            {!speechRecognitionAvailable && (
+              <Text style={styles.pronounceFallback}>Mikrofon modu için development build gerekir.</Text>
+            )}
 
             <View style={styles.pronounceButtons}>
               <TouchableOpacity
-                style={[styles.micButton, isRecognizing && styles.micButtonActive]}
-                onPress={isRecognizing ? handlePronunciationStop : handlePronunciationStart}
+                style={[
+                  styles.micButton,
+                  isRecognizing && styles.micButtonActive,
+                  !speechRecognitionAvailable && styles.micButtonDisabled,
+                ]}
+                onPressIn={handlePronunciationStart}
+                onPressOut={handlePronunciationStop}
+                disabled={!speechRecognitionAvailable || lesson.showResult}
               >
-                <Ionicons name={isRecognizing ? 'stop-circle' : 'mic'} size={24} color={COLORS.white} />
-                <Text style={styles.micButtonText}>{isRecognizing ? 'Durdur' : 'Konuş'}</Text>
+                <Ionicons name={isRecognizing ? 'mic' : 'mic-outline'} size={24} color={COLORS.white} />
+                <Text style={styles.micButtonText}>{isRecognizing ? 'Konuşuyorsun...' : 'Basılı Tut'}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.listenAgainButton} onPress={handleSpeak}>
                 <Ionicons name="volume-medium" size={20} color={COLORS.blueDark} />
                 <Text style={styles.listenAgainText}>Önce dinle</Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.pronounceWaveWrap}>
+              {soundBars.map((bar, idx) => (
+                <Animated.View
+                  key={`pronounce-wave-${idx}`}
+                  style={[
+                    styles.soundBar,
+                    {
+                      height: bar.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [8, 34],
+                      }),
+                    },
+                  ]}
+                />
+              ))}
             </View>
           </View>
         )}
@@ -407,7 +524,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
 
-        {!!q.options?.length && (
+        {(q.type !== 'pronounce' || !speechRecognitionAvailable) && !!q.options?.length && (
           <View style={styles.optionsContainer}>
             {q.options.map((option, index) => {
               const isSelected = lesson.selectedAnswer === option;
@@ -466,7 +583,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           <View style={styles.resultFeedback}>
             <Text style={styles.resultIcon}>{lesson.isCorrect ? ICONS.check : ICONS.cross}</Text>
             <View>
-              <Text style={[styles.resultText, { color: lesson.isCorrect ? COLORS.primaryDark : COLORS.redDark }]}>
+              <Text style={[styles.resultText, { color: lesson.isCorrect ? COLORS.primaryDark : COLORS.redDark }]}> 
                 {lesson.isCorrect ? 'Harika!' : 'Yanlış!'}
               </Text>
               {!lesson.isCorrect && <Text style={styles.correctAnswerText}>Doğrusu: {q.correctAnswer}</Text>}
@@ -508,14 +625,17 @@ const styles = StyleSheet.create({
   promptCard: { backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan },
   promptCardListen: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan, gap: 12 },
   speakerButton: { width: 50, height: 50, borderRadius: 25, backgroundColor: COLORS.blueLight + '45', alignItems: 'center', justifyContent: 'center' },
-  soundWaveWrap: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 36 },
+  soundWaveWrap: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 6, height: 36 },
+  pronounceWaveWrap: { marginTop: 12, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 6, height: 36 },
   soundBar: { width: 8, borderRadius: 8, backgroundColor: COLORS.blue },
   pronounceCard: { backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan },
   pronounceWord: { fontSize: 30, color: COLORS.owl, ...FONTS.bold, textAlign: 'center' },
   pronounceSub: { marginTop: 8, fontSize: 13, color: COLORS.wolf, textAlign: 'center', ...FONTS.medium },
+  pronounceFallback: { marginTop: 6, fontSize: 12, color: COLORS.redDark, textAlign: 'center', ...FONTS.medium },
   pronounceButtons: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   micButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.blueDark, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
   micButtonActive: { backgroundColor: COLORS.red },
+  micButtonDisabled: { backgroundColor: COLORS.hare },
   micButtonText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
   listenAgainButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.blueLight + '2A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   listenAgainText: { color: COLORS.blueDark, fontSize: 13, ...FONTS.semiBold },
