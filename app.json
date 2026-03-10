@@ -16,14 +16,23 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lingualeap.app"
+      "bundleIdentifier": "com.lingualeap.app",
+      "googleServicesFile": "./config/firebase/GoogleService-Info.plist",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "LinguaLeap converts speech to text to evaluate pronunciation.",
+        "NSMicrophoneUsageDescription": "LinguaLeap uses microphone access to analyze pronunciation.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#58CC02"
       },
-      "package": "com.lingualeap.app"
+      "package": "com.lingualeap.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,7 +40,22 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      "expo-speech-recognition"
-    ]
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "LinguaLeap uses microphone access to analyze pronunciation.",
+          "speechRecognitionPermission": "LinguaLeap converts speech to text to evaluate pronunciation.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c8fce1cc-4638-4b36-9bda-9e8f8073b324"
+      }
+    },
+    "owner": "efeberktnci"
   }
 }
