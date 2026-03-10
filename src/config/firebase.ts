@@ -1,5 +1,7 @@
+const FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "REPLACE_WITH_FIREBASE_API_KEY";
+
 export const FIREBASE_CONFIG = {
-  apiKey: "REPLACE_WITH_FIREBASE_API_KEY",
+  apiKey: FIREBASE_API_KEY,
   authDomain: "lingualeap-ffa46.firebaseapp.com",
   projectId: "lingualeap-ffa46",
   storageBucket: "lingualeap-ffa46.firebasestorage.app",
@@ -147,3 +149,5 @@ export async function queryCollection(collectionName: string, token: string, ord
   if (limitCount) return docs.slice(0, limitCount);
   return docs;
 }
+
+
