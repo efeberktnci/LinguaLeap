@@ -13,11 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Speech from 'expo-speech';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 
 import { COLORS, FONTS } from '../theme/colors';
 import { RootStackParamList } from '../types';
 import { useLesson, useUser, useAuth } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
+import AppSymbol from '../components/AppSymbol';
 import * as firestoreService from '../services/firestore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
@@ -32,12 +34,7 @@ type SpeechRecognitionModuleLike = {
 };
 
 let SpeechRecognitionModule: SpeechRecognitionModuleLike | null = null;
-try {
-  const speechRecognitionPkg = require('expo-speech-recognition');
-  SpeechRecognitionModule = (speechRecognitionPkg?.ExpoSpeechRecognitionModule as SpeechRecognitionModuleLike) ?? null;
-} catch {
-  SpeechRecognitionModule = null;
-}
+SpeechRecognitionModule = (ExpoSpeechRecognitionModule as SpeechRecognitionModuleLike) ?? null;
 
 const OPTION_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)', 'f)'];
 
@@ -97,6 +94,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [isEvaluatingPronunciation, setIsEvaluatingPronunciation] = useState(false);
   const [micLevel, setMicLevel] = useState(0.2);
   const [pronunciationMessage, setPronunciationMessage] = useState<string | null>(null);
 
@@ -169,12 +167,14 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       const expected = (q.correctAnswer ?? '').trim();
       const score = pronunciationScore(transcript, expected);
       const isCorrect = score >= 0.78 || normalizeAnswer(transcript).includes(normalizeAnswer(expected));
+      const finalAnswer = isCorrect ? expected : transcript;
 
       setPronunciationMessage(isCorrect ? 'Doğru telaffuz, harika!' : 'Yanlış telaffuz, tekrar dene.');
+      setIsEvaluatingPronunciation(true);
 
-      lesson.selectAnswer(isCorrect ? expected : transcript);
+      lesson.selectAnswer(finalAnswer);
       setTimeout(() => {
-        lesson.checkAnswer();
+        lesson.checkAnswer(finalAnswer);
       }, 140);
     });
 
@@ -195,7 +195,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         await lesson.finishLesson(route.params.lesson.id);
         await refreshProfile();
       } catch (error) {
-        console.log('FINISH LESSON ERROR:', error);
+        console.warn('FINISH LESSON ERROR:', error);
       }
     };
 
@@ -205,6 +205,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   useEffect(() => {
     pronunciationHandledRef.current = false;
     setIsRecognizing(false);
+    setIsEvaluatingPronunciation(false);
     setMicLevel(0.2);
     SpeechRecognitionModule?.stop?.();
 
@@ -275,7 +276,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       Alert.alert('Canlar Yenilendi', '5 can eklendi.');
       navigation.goBack();
     } catch (error) {
-      console.log('REFILL ERROR:', error);
+      console.warn('REFILL ERROR:', error);
       Alert.alert('Hata', 'Canlar yenilenemedi.');
     }
   };
@@ -337,17 +338,28 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     setIsRecognizing(false);
   }, [isRecognizing]);
 
+  const handleCheckButtonPress = useCallback(() => {
+    if (isEvaluatingPronunciation) return;
+
+    if (lesson.showResult) {
+      lesson.continueLesson();
+      return;
+    }
+
+    lesson.checkAnswer();
+  }, [isEvaluatingPronunciation, lesson]);
+
   if ((user?.hearts ?? 0) <= 0 && !lesson.isFinished) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: '#FFF5F5' }]}>
         <View style={styles.noHeartsContainer}>
-          <Text style={styles.noHeartsEmoji}>{ICONS.brokenHeart}</Text>
+          <AppSymbol symbol={ICONS.brokenHeart} size={52} style={styles.noHeartsEmoji} />
           <Text style={styles.noHeartsTitle}>Canların Bitti</Text>
           <Text style={styles.noHeartsDesc}>Devam etmek için canlarını yenile.</Text>
 
           <View style={styles.heartsDisplay}>
             {Array.from({ length: 5 }).map((_, i) => (
-              <Text key={i} style={styles.heartIcon}>♡</Text>
+              <AppSymbol key={i} symbol="♡" size={28} color={COLORS.hare} style={styles.heartIcon} />
             ))}
           </View>
 
@@ -367,7 +379,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: lesson.passed ? '#F0FFF0' : '#FFF5F5' }]}>
         <View style={styles.finishedContainer}>
-          <Text style={styles.finishedEmoji}>{lesson.passed ? ICONS.party : ICONS.brokenHeart}</Text>
+          <AppSymbol symbol={lesson.passed ? ICONS.party : ICONS.brokenHeart} size={54} style={styles.finishedEmoji} />
           <Text style={[styles.finishedTitle, { color: lesson.passed ? COLORS.primaryDark : COLORS.red }]}>
             {lesson.passed ? 'Ders Tamamlandı' : 'Canların Bitti'}
           </Text>
@@ -426,7 +438,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         <View style={styles.heartsContainer}>
-          <Text style={styles.heartText}>{ICONS.heart}</Text>
+          <AppSymbol symbol={ICONS.heart} size={18} color={COLORS.red} style={styles.heartText} />
           <Text style={styles.heartCount}>{user?.hearts ?? 0}</Text>
         </View>
       </View>
@@ -581,7 +593,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       <View style={[styles.bottomBar, lesson.showResult && (lesson.isCorrect ? styles.bottomBarCorrect : styles.bottomBarIncorrect)]}>
         {lesson.showResult && (
           <View style={styles.resultFeedback}>
-            <Text style={styles.resultIcon}>{lesson.isCorrect ? ICONS.check : ICONS.cross}</Text>
+            <AppSymbol symbol={lesson.isCorrect ? ICONS.check : ICONS.cross} size={24} style={styles.resultIcon} />
             <View>
               <Text style={[styles.resultText, { color: lesson.isCorrect ? COLORS.primaryDark : COLORS.redDark }]}> 
                 {lesson.isCorrect ? 'Harika!' : 'Yanlış!'}
@@ -594,14 +606,16 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         <TouchableOpacity
           style={[
             styles.checkButton,
-            !lesson.selectedAnswer && !lesson.showResult && styles.checkButtonDisabled,
+            ((!lesson.selectedAnswer && !lesson.showResult) || isEvaluatingPronunciation) && styles.checkButtonDisabled,
             lesson.showResult && lesson.isCorrect && styles.checkButtonCorrect,
             lesson.showResult && !lesson.isCorrect && styles.checkButtonIncorrect,
           ]}
-          onPress={lesson.showResult ? lesson.continueLesson : lesson.checkAnswer}
-          disabled={!lesson.selectedAnswer && !lesson.showResult}
+          onPress={handleCheckButtonPress}
+          disabled={(!lesson.selectedAnswer && !lesson.showResult) || isEvaluatingPronunciation}
         >
-          <Text style={styles.checkButtonText}>{lesson.showResult ? 'DEVAM ET' : 'KONTROL ET'}</Text>
+          <Text style={styles.checkButtonText}>
+            {lesson.showResult ? 'DEVAM ET' : isEvaluatingPronunciation ? 'DEGERLENDIRILIYOR...' : 'KONTROL ET'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

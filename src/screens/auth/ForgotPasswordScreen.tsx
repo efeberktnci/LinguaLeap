@@ -18,7 +18,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     try {
       await resetPassword(email.trim());
       setSent(true);
-    } catch {}
+    } catch {
+      return;
+    }
   };
 
   if (sent) {

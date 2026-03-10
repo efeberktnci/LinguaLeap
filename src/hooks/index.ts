@@ -130,14 +130,15 @@ export function useLesson(questions: QuizQuestion[]) {
     [state.showResult]
   );
 
-  const checkAnswer = useCallback(async () => {
+  const checkAnswer = useCallback(async (answerOverride?: string) => {
     if (!currentQuestion) return;
 
-    const correct =
-      state.selectedAnswer === currentQuestion.correctAnswer;
+    const submittedAnswer = answerOverride ?? state.selectedAnswer;
+    const correct = submittedAnswer === currentQuestion.correctAnswer;
 
     setState((prev) => ({
       ...prev,
+      selectedAnswer: submittedAnswer ?? prev.selectedAnswer,
       isCorrect: correct,
       showResult: true,
       score: correct ? prev.score + 1 : prev.score,
@@ -219,7 +220,6 @@ export function useLesson(questions: QuizQuestion[]) {
 export function useLanguage() {
   return useLanguageContext();
 }
-
 
 
 

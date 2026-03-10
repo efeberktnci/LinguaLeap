@@ -1,8 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
-import { useUser, useLanguage } from '../hooks';
+import { useLanguage, useUser } from '../hooks';
 
 const ShopScreen: React.FC = () => {
   const { user, spendGems, refillHearts } = useUser();
@@ -152,7 +152,6 @@ const ShopScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.premiumModalContent}>
             <View style={styles.premiumModalHeader}>
-              <Ionicons name="star" size={42} color={COLORS.accent} />
               <Text style={styles.premiumModalTitle}>LinguaLeap Super</Text>
               <Text style={styles.premiumModalSub}>{tx('Ogrenme deneyimini bir ust seviyeye tasi')}</Text>
             </View>
@@ -252,4 +251,3 @@ const styles = StyleSheet.create({
   premiumSkip: { alignItems: 'center', marginTop: 16, paddingVertical: 8 },
   premiumSkipText: { fontSize: 15, color: COLORS.wolf, ...FONTS.medium },
 });
-

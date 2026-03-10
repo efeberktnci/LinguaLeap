@@ -72,7 +72,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (profile) {
         setState((prev) => ({ ...prev, profile }));
       }
-    } catch {}
+    } catch {
+      return;
+    }
   }, [state.user]);
 
   const loadSavedAuth = async () => {

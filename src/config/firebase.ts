@@ -136,7 +136,7 @@ export async function updateDocument(collectionName: string, docId: string, data
 }
 
 export async function queryCollection(collectionName: string, token: string, orderField?: string, limitCount?: number) {
-  let url = `${FIRESTORE_BASE}/${collectionName}`;
+  const url = `${FIRESTORE_BASE}/${collectionName}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -149,5 +149,3 @@ export async function queryCollection(collectionName: string, token: string, ord
   if (limitCount) return docs.slice(0, limitCount);
   return docs;
 }
-
-

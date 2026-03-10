@@ -82,9 +82,9 @@ const LessonNode: React.FC<LessonNodeProps> = ({
   const isLocked = !!lesson.locked;
   const isCompleted = !!lesson.completed;
 
-  let bgColor = unitColor;
-  let shadowColor = unitShadow;
-  let iconColor = COLORS.white;
+  let bgColor: string = unitColor;
+  let shadowColor: string = unitShadow;
+  let iconColor: string = COLORS.white;
 
   if (isLocked) {
     bgColor = COLORS.swan;

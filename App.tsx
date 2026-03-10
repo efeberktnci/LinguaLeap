@@ -5,16 +5,27 @@ import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { LanguageProvider } from './src/context/LanguageContext';
 
-const App: React.FC = () => (
-  <AuthProvider>
-    <LanguageProvider>
-      <NavigationContainer>
-      <StatusBar style="dark" />
-      <RootNavigator />
-    </NavigationContainer>
-    </LanguageProvider>
-  </AuthProvider>
-);
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
-export default App;
+export default function App() {
 
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  return (
+    <AuthProvider>
+      <LanguageProvider>
+        <NavigationContainer>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </NavigationContainer>
+      </LanguageProvider>
+    </AuthProvider>
+  );
+}

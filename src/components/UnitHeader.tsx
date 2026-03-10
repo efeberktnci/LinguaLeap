@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { COLORS, FONTS } from '../theme/colors';
 import { Unit } from '../types';
+import AppSymbol from './AppSymbol';
 
 interface UnitHeaderProps {
   unit: Unit;
@@ -40,7 +41,7 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({ unit }) => {
 
         <View style={styles.iconWrapOuter}>
           <View style={styles.iconWrapInner}>
-            <Text style={styles.icon}>{unit.icon}</Text>
+            <AppSymbol symbol={unit.icon} size={34} color={COLORS.white} style={styles.icon} />
           </View>
         </View>
       </View>

@@ -4,6 +4,7 @@ import { COLORS, FONTS } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { getLeagueInfo, formatNumber } from '../utils/helpers';
 import { LeaderboardEntry } from '../types';
+import AppSymbol from '../components/AppSymbol';
 import * as firestoreService from '../services/firestore';
 
 const LeaderboardScreen: React.FC = () => {
@@ -46,7 +47,7 @@ const LeaderboardScreen: React.FC = () => {
         {/* Lig Karti */}
         <View style={styles.leagueCard}>
           <View style={styles.leagueIconContainer}>
-            <Text style={styles.leagueIcon}>{leagueInfo.icon}</Text>
+            <AppSymbol symbol={leagueInfo.icon} size={44} color={COLORS.blueDark} style={styles.leagueIcon} />
           </View>
           <Text style={styles.leagueName}>{user.league} {tx('Lig')}</Text>
           <Text style={styles.leagueSubtitle}>
@@ -84,7 +85,7 @@ const LeaderboardScreen: React.FC = () => {
           </View>
         ) : entries.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🏆</Text>
+            <AppSymbol symbol="🏆" size={48} color={COLORS.accent} style={styles.emptyEmoji} />
             <Text style={styles.emptyTitle}>{tx('Henuz Siralama Yok')}</Text>
             <Text style={styles.emptyDesc}>{tx('Ders tamamlayarak siralamada yerini al!')}</Text>
           </View>
@@ -98,14 +99,14 @@ const LeaderboardScreen: React.FC = () => {
                 <View key={entry.uid || index} style={[styles.userRow, isCurrentUser && styles.userRowCurrent, isTop3 && styles.userRowTop3]}>
                   <View style={styles.rankContainer}>
                     {isTop3 ? (
-                      <Text style={styles.rankMedal}>{index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</Text>
+                      <AppSymbol symbol={index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'} size={22} color={COLORS.accent} style={styles.rankMedal} />
                     ) : (
                       <Text style={[styles.rankText, isCurrentUser && styles.rankTextCurrent]}>{index + 1}</Text>
                     )}
                   </View>
                   <View style={styles.userInfo}>
                     <View style={[styles.userAvatar, isCurrentUser && styles.userAvatarCurrent]}>
-                      <Text style={styles.userAvatarText}>{entry.avatar}</Text>
+                      <AppSymbol symbol={entry.avatar} size={20} color={isCurrentUser ? COLORS.white : COLORS.blueDark} style={styles.userAvatarText} />
                     </View>
                     <View>
                       <Text style={[styles.userName, isCurrentUser && styles.userNameCurrent]}>{entry.name}</Text>
@@ -193,7 +194,6 @@ const styles = StyleSheet.create({
   zoneIndicator: { width: 12, height: 12, borderRadius: 6 },
   zoneText: { fontSize: 13, color: COLORS.wolf },
 });
-
 
 
 

@@ -1,17 +1,25 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SHADOWS } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { calculateProgress } from '../utils/helpers';
 import ProgressBar from '../components/ProgressBar';
 import TopBar from '../components/TopBar';
+import AppSymbol from '../components/AppSymbol';
 import { UNITS } from '../data/mockData';
 
 const DAILY_GOAL = 250;
 
+type LevelCardTheme = {
+  backgroundColor: string;
+  borderColor: string;
+  badgeColor: string;
+  progressColor: string;
+};
+
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { user, uid } = useUser();
+  const { user } = useUser();
   const { refreshProfile } = useAuth();
   const { t, tx } = useLanguage();
 
@@ -45,35 +53,45 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   // Seviye görünümü: levele göre tema
   const level = user.level ?? 1;
-  let levelCardBg = COLORS.white;
-  let levelCardBorder = COLORS.swan;
-  let levelBadgeBg = COLORS.secondary;
-  let levelProgressColor = COLORS.secondary;
+  let levelTheme: LevelCardTheme = {
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.swan,
+    badgeColor: COLORS.secondary,
+    progressColor: COLORS.secondary,
+  };
 
   if (level < 10) {
     // Başlangıç: yeşil tonlar
-    levelCardBg = '#F1FBEA';
-    levelCardBorder = COLORS.primaryBg;
-    levelBadgeBg = COLORS.primary;
-    levelProgressColor = COLORS.primary;
+    levelTheme = {
+      backgroundColor: '#F1FBEA',
+      borderColor: COLORS.primaryBg,
+      badgeColor: COLORS.primary,
+      progressColor: COLORS.primary,
+    };
   } else if (level < 30) {
     // Orta: mavi tonlar
-    levelCardBg = '#E8F4FD';
-    levelCardBorder = COLORS.blueLight;
-    levelBadgeBg = COLORS.blue;
-    levelProgressColor = COLORS.blue;
+    levelTheme = {
+      backgroundColor: '#E8F4FD',
+      borderColor: COLORS.blueLight,
+      badgeColor: COLORS.blue,
+      progressColor: COLORS.blue,
+    };
   } else if (level < 60) {
     // İleri: mor tonlar
-    levelCardBg = '#F5ECFF';
-    levelCardBorder = COLORS.secondary;
-    levelBadgeBg = COLORS.secondaryDark;
-    levelProgressColor = COLORS.secondaryDark;
+    levelTheme = {
+      backgroundColor: '#F5ECFF',
+      borderColor: COLORS.secondary,
+      badgeColor: COLORS.secondaryDark,
+      progressColor: COLORS.secondaryDark,
+    };
   } else {
     // Usta: kırmızı / elmas tonları
-    levelCardBg = '#FFF0F0';
-    levelCardBorder = COLORS.redLight;
-    levelBadgeBg = COLORS.red;
-    levelProgressColor = COLORS.red;
+    levelTheme = {
+      backgroundColor: '#FFF0F0',
+      borderColor: COLORS.redLight,
+      badgeColor: COLORS.red,
+      progressColor: COLORS.red,
+    };
   }
 
   // Tamamlanan ders sayısı
@@ -150,18 +168,18 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.greetingCard}>
           <View style={styles.greetingLeft}>
             <Text style={styles.greeting}>{getLocalizedGreeting()},</Text>
-            <Text style={styles.userName}>{user.name}! 👋</Text>
+            <Text style={styles.userName}>{user.name}!</Text>
             <Text style={styles.greetingSub}>{tx('Derslerine devam edelim mi?')}</Text>
           </View>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatar}>{user.avatar}</Text>
+            <AppSymbol symbol={user.avatar} size={34} color={COLORS.blueDark} style={styles.avatar} />
           </View>
         </View>
 
         {/* Streak */}
         <View style={styles.streakCard}>
           <View style={styles.streakLeft}>
-            <Text style={styles.streakFire}>🔥</Text>
+            <AppSymbol symbol="🔥" size={28} color={COLORS.accent} style={styles.streakFire} />
             <View>
               <Text style={styles.streakCount}>
                 {user.streak > 0 ? `${user.streak} ${tx('gunluk seri')}!` : tx('Seriyi baslat!')}
@@ -194,14 +212,14 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
 
         {/* Seviye */}
-        <View style={[styles.levelCard, { backgroundColor: levelCardBg, borderColor: levelCardBorder }]}>
+        <View style={[styles.levelCard, { backgroundColor: levelTheme.backgroundColor, borderColor: levelTheme.borderColor }]}>
           <View style={styles.levelRow}>
-            <View style={[styles.levelBadge, { backgroundColor: levelBadgeBg }]}>
+            <View style={[styles.levelBadge, { backgroundColor: levelTheme.badgeColor }]}>
               <Text style={styles.levelNumber}>{user.level}</Text>
             </View>
             <View style={styles.levelInfo}>
               <Text style={styles.levelTitle}>{t('home.level')} {user.level}</Text>
-              <ProgressBar progress={levelProgress} height={10} color={levelProgressColor} style={{ marginTop: 4 }} />
+              <ProgressBar progress={levelProgress} height={10} color={levelTheme.progressColor} style={{ marginTop: 4 }} />
               <Text style={styles.levelXP}>{user.currentXP} / {user.xpToNextLevel} XP</Text>
             </View>
           </View>
@@ -213,7 +231,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.coursesRow}>
             {courses.map((course: any) => (
               <TouchableOpacity key={course.id} style={styles.courseCard} onPress={() => navigation.navigate('Learn')}>
-                <Text style={styles.courseFlag}>{course.flag}</Text>
+                <AppSymbol symbol={course.flag} size={24} color={COLORS.blueDark} style={styles.courseFlag} />
                 <Text style={styles.courseName}>{course.name}</Text>
                 <ProgressBar progress={course.progress} height={6} color={COLORS.primary} showShadow={false} style={{ marginTop: 8, width: '100%' }} />
                 <Text style={styles.coursePercent}>{Math.round(course.progress * 100)}%</Text>
@@ -230,7 +248,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             return (
               <View key={quest.id} style={[styles.questCard, quest.completed && styles.questCardDone]}>
                 <View style={styles.questIconWrap}>
-                  <Text style={styles.questIcon}>{quest.icon}</Text>
+                  <AppSymbol symbol={quest.icon} size={20} color={COLORS.blueDark} style={styles.questIcon} />
                 </View>
                 <View style={styles.questContent}>
                   <Text style={[styles.questTitle, quest.completed && styles.questTitleDone]}>{quest.title}</Text>
@@ -239,7 +257,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <View style={styles.questReward}>
                   {quest.completed ? (
                     <View style={styles.questCheck}>
-                      <Text style={styles.questCheckText}>✓</Text>
+                      <AppSymbol symbol="✓" size={14} color={COLORS.white} style={styles.questCheckText} />
                     </View>
                   ) : (
                     <Text style={styles.questXP}>+{quest.xpReward} XP</Text>
@@ -327,10 +345,6 @@ const styles = StyleSheet.create({
   quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, gap: 8, ...SHADOWS.medium },
   quickActionText: { fontSize: 15, color: COLORS.white, ...FONTS.bold },
 });
-
-
-
-
 
 
 

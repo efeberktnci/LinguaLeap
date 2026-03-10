@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
 import { useUser, useLanguage } from '../hooks';
+import AppSymbol from './AppSymbol';
 
 const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) => {
   const { user } = useUser();
@@ -19,7 +20,7 @@ const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) =
       <View style={styles.container}>
         {showLanguage ? (
           <TouchableOpacity style={styles.langButton} activeOpacity={0.85} onPress={() => setOpen(true)}>
-            <Text style={styles.flag}>{activeFlag}</Text>
+            <AppSymbol symbol={activeFlag} size={22} color={COLORS.blueDark} style={styles.flag} />
           </TouchableOpacity>
         ) : (
           <View />
@@ -49,7 +50,7 @@ const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) =
             <Text style={styles.modalTitle}>{t('language.title')}</Text>
             {options.map((opt) => (
               <TouchableOpacity key={opt.code} style={[styles.optionRow, opt.code === language && styles.optionRowActive]} onPress={() => onSelect(opt.code)}>
-                <Text style={styles.optionFlag}>{opt.flag}</Text>
+                <AppSymbol symbol={opt.flag} size={18} color={COLORS.blueDark} style={styles.optionFlag} />
                 <Text style={styles.optionLabel}>{opt.label}</Text>
                 {opt.code === language && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />}
               </TouchableOpacity>

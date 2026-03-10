@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { formatNumber, getLeagueInfo } from '../utils/helpers';
+import AppSymbol from '../components/AppSymbol';
 
 const AVATARS = [
   '\u{1F989}', '\u{1F436}', '\u{1F431}', '\u{1F98A}', '\u{1F43C}', '\u{1F428}', '\u{1F981}', '\u{1F438}',
@@ -51,7 +52,7 @@ const ProfileScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <TouchableOpacity style={styles.avatarWrap} onPress={() => setShowAvatarPicker(true)}>
-            <Text style={styles.avatarBig}>{user.avatar}</Text>
+            <AppSymbol symbol={user.avatar} size={60} color={COLORS.blueDark} style={styles.avatarBig} />
             <View style={styles.editAvatarBadge}>
               <Ionicons name="pencil" size={12} color={COLORS.white} />
             </View>
@@ -81,7 +82,7 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.statLabel}>{tx('Taclar')}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statIcon}>{leagueInfo.icon}</Text>
+            <AppSymbol symbol={leagueInfo.icon} size={22} color={COLORS.blueDark} style={styles.statIcon} />
             <Text style={[styles.statValue, { fontSize: 14 }]}>{user.league}</Text>
             <Text style={styles.statLabel}>{tx('Lig')}</Text>
           </View>
@@ -92,7 +93,7 @@ const ProfileScreen: React.FC = () => {
           <View style={styles.achievementsGrid}>
             {(user.achievements || []).map((ach: any) => (
               <View key={ach.id} style={[styles.achievementCard, !ach.unlocked && styles.achievementLocked]}>
-                <Text style={[styles.achievementIcon, !ach.unlocked && { opacity: 0.3 }]}>{ach.icon}</Text>
+                <AppSymbol symbol={ach.icon} size={22} color={ach.unlocked ? COLORS.blueDark : COLORS.hare} style={[styles.achievementIcon, !ach.unlocked && { opacity: 0.3 }]} />
                 <Text style={[styles.achievementTitle, !ach.unlocked && { color: COLORS.hare }]} numberOfLines={2}>{ach.title}</Text>
                 {ach.unlocked && (
                   <View style={styles.unlockedBadge}>
@@ -168,7 +169,7 @@ const ProfileScreen: React.FC = () => {
             <View style={styles.avatarGrid}>
               {AVATARS.map((a) => (
                 <TouchableOpacity key={a} style={[styles.avatarOption, user.avatar === a && styles.avatarOptionActive]} onPress={() => handleAvatarSelect(a)}>
-                  <Text style={styles.avatarOptionText}>{a}</Text>
+                  <AppSymbol symbol={a} size={30} color={COLORS.blueDark} style={styles.avatarOptionText} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -294,6 +295,5 @@ const styles = StyleSheet.create({
   resetButton: { marginTop: 12, padding: 14, borderRadius: 16, backgroundColor: COLORS.red, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.redDark },
   resetButtonText: { fontSize: 14, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.5 },
 });
-
 
 

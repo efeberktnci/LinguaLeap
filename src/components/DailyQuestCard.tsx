@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '../theme/colors';
 import { DailyQuest } from '../types';
+import AppSymbol from './AppSymbol';
 import ProgressBar from './ProgressBar';
 
 interface DailyQuestCardProps {
@@ -14,7 +15,7 @@ const DailyQuestCard: React.FC<DailyQuestCardProps> = ({ quest }) => {
   return (
     <View style={[styles.container, quest.completed && styles.containerCompleted]}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{quest.icon}</Text>
+        <AppSymbol symbol={quest.icon} size={20} color={COLORS.blueDark} style={styles.icon} />
       </View>
       <View style={styles.content}>
         <Text style={[styles.title, quest.completed && styles.titleCompleted]}>{quest.title}</Text>
@@ -28,7 +29,7 @@ const DailyQuestCard: React.FC<DailyQuestCardProps> = ({ quest }) => {
       <View style={styles.reward}>
         {quest.completed ? (
           <View style={styles.checkmark}>
-            <Text style={styles.checkmarkText}>✓</Text>
+            <AppSymbol symbol="✓" size={14} color={COLORS.white} style={styles.checkmarkText} />
           </View>
         ) : (
           <Text style={styles.xpText}>+{quest.xpReward} XP</Text>

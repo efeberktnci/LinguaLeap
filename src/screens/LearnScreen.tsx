@@ -9,6 +9,7 @@ import LessonNode from '../components/LessonNode';
 import { RootStackParamList } from '../types';
 import TopBar from '../components/TopBar';
 import UnitHeader from '../components/UnitHeader';
+import AppSymbol from '../components/AppSymbol';
 import { useLanguage, useUser } from '../hooks';
 import {
   getLessonQuestions,
@@ -98,7 +99,7 @@ const LearnScreen: React.FC = () => {
       <View style={styles.targetBar}>
         <Text style={styles.targetTitle}>{tx('Ogrenilecek Dil')}</Text>
         <TouchableOpacity style={styles.targetChip} onPress={() => setPickerVisible(true)}>
-          <Text style={styles.targetChipFlag}>{targetOption?.flag ?? '\u{1F1EC}\u{1F1E7}'}</Text>
+          <AppSymbol symbol={targetOption?.flag ?? '\u{1F1EC}\u{1F1E7}'} size={16} color={COLORS.blueDark} style={styles.targetChipFlag} />
           <Text style={styles.targetChipText}>{targetOption?.label ?? 'English'}</Text>
         </TouchableOpacity>
       </View>
@@ -240,9 +241,9 @@ const LearnScreen: React.FC = () => {
                   setPickerVisible(false);
                 }}
               >
-                <Text style={styles.optionFlag}>{option.flag}</Text>
+                <AppSymbol symbol={option.flag} size={18} color={COLORS.blueDark} style={styles.optionFlag} />
                 <Text style={styles.optionLabel}>{option.label}</Text>
-                {targetLanguage === option.code && <Text style={styles.optionCheck}>✓</Text>}
+                {targetLanguage === option.code && <AppSymbol symbol="✓" size={18} color={COLORS.primary} style={styles.optionCheck} />}
               </TouchableOpacity>
             ))}
           </View>

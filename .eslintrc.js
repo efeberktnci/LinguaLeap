@@ -28,7 +28,8 @@ module.exports = {
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   env: {
-    'react-native/react-native': true,
+    es2021: true,
+    node: true,
     jest: true,
   },
   ignorePatterns: ['node_modules/', 'dist/', '.expo/'],

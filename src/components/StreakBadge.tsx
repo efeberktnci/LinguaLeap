@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '../theme/colors';
+import AppSymbol from './AppSymbol';
 
 interface StreakBadgeProps {
   streak: number;
@@ -11,7 +12,7 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({ streak, size = 'medium' }) =>
   const isLarge = size === 'large';
   return (
     <View style={[styles.container, isLarge && styles.containerLarge]}>
-      <Text style={[styles.fire, isLarge && styles.fireLarge]}>🔥</Text>
+      <AppSymbol symbol="🔥" size={isLarge ? 28 : 16} color={COLORS.accent} style={[styles.fire, isLarge && styles.fireLarge]} />
       <Text style={[styles.count, isLarge && styles.countLarge]}>{streak}</Text>
     </View>
   );
