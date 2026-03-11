@@ -23,6 +23,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <View style={[styles.container, { height, backgroundColor, borderRadius: height / 2 }, style]}>
+      <View style={[styles.trackInset, { borderRadius: height / 2 }]} />
       {clamped > 0 && (
         <View
           style={[
@@ -43,6 +44,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               ]}
             />
           )}
+          <View style={[styles.cap, { width: height, height, borderRadius: height / 2 }]} />
         </View>
       )}
     </View>
@@ -52,12 +54,23 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 export default ProgressBar;
 
 const styles = StyleSheet.create({
-  container: { overflow: 'hidden', width: '100%' },
+  container: { overflow: 'hidden', width: '100%', position: 'relative' },
+  trackInset: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: 'rgba(33,48,39,0.06)',
+  },
   fill: { position: 'absolute', left: 0, top: 0 },
   shine: {
     position: 'absolute',
     left: 4,
     right: 4,
     backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  cap: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
 });

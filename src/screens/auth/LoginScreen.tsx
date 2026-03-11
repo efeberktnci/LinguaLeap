@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types';
 import { useAuth, useLanguage } from '../../hooks';
-import { COLORS, FONTS } from '../../theme/colors';
+import { COLORS, FONTS, SHADOWS, UI } from '../../theme/colors';
 
 type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'> };
 
@@ -92,23 +92,23 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
+  container: { flex: 1, backgroundColor: COLORS.bgCanvas },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   logo: { fontSize: 64, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 32, color: COLORS.primary, ...FONTS.bold, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: COLORS.wolf, textAlign: 'center', marginTop: 4, marginBottom: 32, ...FONTS.regular },
-  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: COLORS.redLight, borderRadius: 12, padding: 12, marginBottom: 16 },
+  title: { fontSize: 32, color: COLORS.ink, ...FONTS.bold, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: COLORS.inkSoft, textAlign: 'center', marginTop: 4, marginBottom: 20, ...FONTS.regular },
+  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: COLORS.redLight, borderRadius: UI.radius.md, padding: 12, marginBottom: 16 },
   errorText: { flex: 1, fontSize: 13, color: COLORS.redDark, ...FONTS.medium },
   errorClose: { fontSize: 16, color: COLORS.hare, paddingLeft: 8 },
-  form: { gap: 16 },
+  form: { gap: 16, backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 18, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
   inputContainer: { gap: 6 },
-  inputLabel: { fontSize: 14, color: COLORS.eel, ...FONTS.semiBold },
-  input: { borderWidth: 2, borderColor: COLORS.swan, borderRadius: 14, padding: 14, fontSize: 16, color: COLORS.owl, backgroundColor: COLORS.snow },
+  inputLabel: { fontSize: 14, color: COLORS.ink, ...FONTS.semiBold },
+  input: { borderWidth: 1, borderColor: COLORS.mintLine, borderRadius: UI.radius.md, padding: 14, fontSize: 16, color: COLORS.ink, backgroundColor: COLORS.bgCanvas },
   forgotText: { fontSize: 14, color: COLORS.blue, ...FONTS.semiBold, textAlign: 'right' },
-  button: { backgroundColor: COLORS.primary, borderRadius: 16, padding: 16, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark, marginTop: 8 },
+  button: { backgroundColor: COLORS.primary, borderRadius: UI.radius.md, padding: 16, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark, marginTop: 8 },
   buttonDisabled: { backgroundColor: COLORS.swan, borderBottomColor: COLORS.borderDark },
   buttonText: { fontSize: 16, color: COLORS.white, ...FONTS.bold, letterSpacing: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
-  footerText: { fontSize: 15, color: COLORS.wolf, ...FONTS.regular },
+  footerText: { fontSize: 15, color: COLORS.inkSoft, ...FONTS.regular },
   footerLink: { fontSize: 15, color: COLORS.primary, ...FONTS.bold },
 });

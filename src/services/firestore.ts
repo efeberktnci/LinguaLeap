@@ -1,5 +1,16 @@
 ﻿import { setDocument, getDocument, queryCollection } from '../config/firebase';
-import { UserProfile, LeaderboardEntry, LessonProgress, DailyXP } from '../types';
+import {
+  AssessmentTier,
+  BattlePassState,
+  DailyXP,
+  LeaderboardEntry,
+  LearnMode,
+  LearnPreferences,
+  LessonProgress,
+  PlacementState,
+  RewardChest,
+  UserProfile,
+} from '../types';
 
 const USERS = 'users';
 const LEADERBOARD = 'leaderboard';
@@ -24,6 +35,96 @@ const EMPTY_WEEK: DailyXP[] = [
   { day: 'Cmt', xp: 0 },
   { day: 'Paz', xp: 0 },
 ];
+
+const DEFAULT_PLACEMENT: PlacementState = {
+  completed: false,
+  score: 0,
+  total: 0,
+  tier: 'starter',
+  lastTakenAt: '',
+};
+
+const DEFAULT_BATTLE_PASS: BattlePassState = {
+  seasonName: 'Spring Sprint',
+  xp: 0,
+  level: 1,
+  premiumUnlocked: false,
+  claimedRewardIds: [],
+};
+
+const DEFAULT_LEARN_PREFERENCES: LearnPreferences = {
+  activeMode: 'standard',
+  learnTargetLanguage: 'en',
+  recentQuestionIds: [],
+  sessionSeeds: {},
+  placementPromptSeen: false,
+  cefrLevel: 'A0',
+  unlockedCefrLevels: ['A0'],
+};
+
+const getBattlePassLevel = (xp: number) => Math.max(1, Math.floor(xp / 120) + 1);
+
+const buildRewardChest = (level: number): RewardChest => {
+  const rarity: RewardChest['rarity'] = level % 10 === 0 ? 'epic' : level % 5 === 0 ? 'rare' : 'common';
+
+  if (rarity === 'epic') {
+    return {
+      id: `level_${level}_epic`,
+      level,
+      title: `Level ${level} Epic Chest`,
+      rarity,
+      icon: '🏆',
+      gems: 120,
+      hearts: 3,
+      xpBoostMinutes: 30,
+      claimed: false,
+    };
+  }
+
+  if (rarity === 'rare') {
+    return {
+      id: `level_${level}_rare`,
+      level,
+      title: `Level ${level} Rare Chest`,
+      rarity,
+      icon: '💎',
+      gems: 60,
+      hearts: 2,
+      xpBoostMinutes: 15,
+      claimed: false,
+    };
+  }
+
+  return {
+    id: `level_${level}_common`,
+    level,
+    title: `Level ${level} Chest`,
+    rarity,
+    icon: '🎁',
+    gems: 25,
+    hearts: 1,
+    xpBoostMinutes: 5,
+    claimed: false,
+  };
+};
+
+const ensureProfileDefaults = (profile: UserProfile): UserProfile => ({
+  ...profile,
+  placement: profile.placement ?? DEFAULT_PLACEMENT,
+  battlePass: {
+    ...DEFAULT_BATTLE_PASS,
+    ...(profile.battlePass ?? {}),
+    claimedRewardIds: profile.battlePass?.claimedRewardIds ?? [],
+  },
+  rewardChests: profile.rewardChests ?? [],
+  learnPreferences: {
+    ...DEFAULT_LEARN_PREFERENCES,
+    ...(profile.learnPreferences ?? {}),
+    recentQuestionIds: profile.learnPreferences?.recentQuestionIds ?? [],
+    sessionSeeds: profile.learnPreferences?.sessionSeeds ?? {},
+  },
+  mistakeBuckets: profile.mistakeBuckets ?? {},
+});
 
 function getDateStr(date: Date): string {
   const y = date.getFullYear();
@@ -67,6 +168,11 @@ export async function createUserProfile(uid: string, email: string, name: string
     dailyXPEarned: 0,
     completedLessons: [],
     lessonProgress: {},
+    placement: DEFAULT_PLACEMENT,
+    battlePass: DEFAULT_BATTLE_PASS,
+    rewardChests: [],
+    learnPreferences: DEFAULT_LEARN_PREFERENCES,
+    mistakeBuckets: {},
   };
 
   await setDocument(USERS, uid, profile, token);
@@ -75,11 +181,13 @@ export async function createUserProfile(uid: string, email: string, name: string
 }
 
 export async function getUserProfile(uid: string, token: string): Promise<UserProfile | null> {
-  return await getDocument(USERS, uid, token);
+  const profile = await getDocument(USERS, uid, token);
+  return profile ? ensureProfileDefaults(profile) : null;
 }
 
 export async function addXP(uid: string, amount: number, token: string): Promise<void> {
-  const profile = await getUserProfile(uid, token);
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
   if (!profile) return;
 
   let newCurrentXP = profile.currentXP + amount;
@@ -117,6 +225,18 @@ export async function addXP(uid: string, amount: number, token: string): Promise
 
   const longestStreak = Math.max(profile.longestStreak || 0, streak);
   const newTotalXP = profile.totalXP + amount;
+  const battlePassXP = (profile.battlePass?.xp ?? 0) + amount;
+  const battlePassLevel = getBattlePassLevel(battlePassXP);
+  const rewardChests = [...(profile.rewardChests ?? [])];
+
+  if (newLevel > profile.level) {
+    for (let level = profile.level + 1; level <= newLevel; level += 1) {
+      const chest = buildRewardChest(level);
+      if (!rewardChests.some((item) => item.id === chest.id)) {
+        rewardChests.push(chest);
+      }
+    }
+  }
 
   const achievements = checkAchievements(profile, {
     totalXP: newTotalXP,
@@ -136,6 +256,12 @@ export async function addXP(uid: string, amount: number, token: string): Promise
     longestStreak,
     lastActiveDate: todayStr,
     achievements,
+    rewardChests,
+    battlePass: {
+      ...(profile.battlePass ?? DEFAULT_BATTLE_PASS),
+      xp: battlePassXP,
+      level: battlePassLevel,
+    },
   };
 
   await setDocument(USERS, uid, updates, token);
@@ -189,9 +315,11 @@ export async function completeLesson(
   score: number,
   totalQuestions: number,
   perfect: boolean,
+  questionIds: string[],
   token: string,
 ): Promise<void> {
-  const profile = await getUserProfile(uid, token);
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
   if (!profile) return;
 
   const completedLessons = (profile.completedLessons || []).includes(lessonId)
@@ -212,12 +340,20 @@ export async function completeLesson(
 
   const newLessonProgress = { ...(profile.lessonProgress || {}), [lessonId]: progress };
   const totalCrowns = Object.values(newLessonProgress).reduce((sum: number, p: any) => sum + (p.crowns || 0), 0);
+  const recentQuestionIds = [
+    ...questionIds,
+    ...(profile.learnPreferences?.recentQuestionIds ?? []),
+  ].filter((value, index, arr) => arr.indexOf(value) === index).slice(0, 60);
 
   await setDocument(USERS, uid, {
     ...profile,
     completedLessons,
     lessonProgress: newLessonProgress,
     crowns: totalCrowns,
+    learnPreferences: {
+      ...(profile.learnPreferences ?? DEFAULT_LEARN_PREFERENCES),
+      recentQuestionIds,
+    },
   }, token);
 }
 
@@ -250,6 +386,11 @@ export async function resetUserStats(uid: string, token: string): Promise<UserPr
     dailyXPEarned: 0,
     completedLessons: [],
     lessonProgress: {},
+    placement: DEFAULT_PLACEMENT,
+    battlePass: DEFAULT_BATTLE_PASS,
+    rewardChests: [],
+    learnPreferences: DEFAULT_LEARN_PREFERENCES,
+    mistakeBuckets: {},
   };
 
   await setDocument(USERS, uid, resetProfile, token);
@@ -262,6 +403,197 @@ export async function resetUserStats(uid: string, token: string): Promise<UserPr
   }, token);
 
   return resetProfile;
+}
+
+export async function savePlacementResult(
+  uid: string,
+  score: number,
+  total: number,
+  tier: AssessmentTier,
+  token: string,
+): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const updatedProfile = {
+    ...profile,
+    placement: {
+      completed: true,
+      score,
+      total,
+      tier,
+      lastTakenAt: new Date().toISOString(),
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function setActiveLearnMode(uid: string, mode: LearnMode, token: string): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const updatedProfile = {
+    ...profile,
+    learnPreferences: {
+      ...(profile.learnPreferences ?? DEFAULT_LEARN_PREFERENCES),
+      activeMode: mode,
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function setLearnTargetLanguage(
+  uid: string,
+  learnTargetLanguage: 'en' | 'de' | 'es' | 'tr',
+  token: string,
+): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const updatedProfile = {
+    ...profile,
+    learnPreferences: {
+      ...(profile.learnPreferences ?? DEFAULT_LEARN_PREFERENCES),
+      learnTargetLanguage,
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function setLearnLevel(
+  uid: string,
+  cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2',
+  unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2')[],
+  placementPromptSeen: boolean,
+  token: string,
+): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const updatedProfile = {
+    ...profile,
+    learnPreferences: {
+      ...(profile.learnPreferences ?? DEFAULT_LEARN_PREFERENCES),
+      cefrLevel,
+      unlockedCefrLevels,
+      placementPromptSeen,
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function claimRewardChest(uid: string, chestId: string, token: string): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const chest = (profile.rewardChests ?? []).find((item) => item.id === chestId && !item.claimed);
+  if (!chest) return profile;
+
+  const rewardChests = (profile.rewardChests ?? []).map((item) =>
+    item.id === chestId ? { ...item, claimed: true } : item
+  );
+
+  const updatedProfile = {
+    ...profile,
+    rewardChests,
+    gems: profile.gems + chest.gems,
+    hearts: Math.min(profile.maxHearts, profile.hearts + chest.hearts),
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function claimBattlePassReward(uid: string, rewardId: string, gemReward: number, token: string): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const rewardLevel = Number(rewardId.split('_').pop()) || 1;
+  const requiresPremium = rewardId.includes('premium');
+
+  if (
+    (profile.battlePass?.claimedRewardIds ?? []).includes(rewardId) ||
+    (profile.battlePass?.level ?? 1) < rewardLevel ||
+    (requiresPremium && !profile.battlePass?.premiumUnlocked)
+  ) {
+    return profile;
+  }
+
+  const updatedProfile = {
+    ...profile,
+    gems: profile.gems + gemReward,
+    battlePass: {
+      ...(profile.battlePass ?? DEFAULT_BATTLE_PASS),
+      claimedRewardIds: [...(profile.battlePass?.claimedRewardIds ?? []), rewardId],
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function unlockBattlePassPremium(uid: string, token: string): Promise<UserProfile | null> {
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  if (profile.battlePass?.premiumUnlocked) return profile;
+
+  const updatedProfile = {
+    ...profile,
+    battlePass: {
+      ...(profile.battlePass ?? DEFAULT_BATTLE_PASS),
+      premiumUnlocked: true,
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
+}
+
+export async function recordQuestionOutcome(uid: string, focus: string | undefined, correct: boolean, token: string): Promise<UserProfile | null> {
+  if (!focus) return null;
+
+  const rawProfile = await getUserProfile(uid, token);
+  const profile = rawProfile ? ensureProfileDefaults(rawProfile) : null;
+  if (!profile) return null;
+
+  const current = profile.mistakeBuckets?.[focus] ?? {
+    focus,
+    wrong: 0,
+    correct: 0,
+    lastSeen: '',
+  };
+
+  const updatedProfile = {
+    ...profile,
+    mistakeBuckets: {
+      ...(profile.mistakeBuckets ?? {}),
+      [focus]: {
+        focus,
+        wrong: current.wrong + (correct ? 0 : 1),
+        correct: current.correct + (correct ? 1 : 0),
+        lastSeen: new Date().toISOString(),
+      },
+    },
+  };
+
+  await setDocument(USERS, uid, updatedProfile, token);
+  return updatedProfile;
 }
 
 function checkAchievements(

@@ -1,17 +1,23 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '../theme/colors';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { formatNumber, getLeagueInfo } from '../utils/helpers';
 import AppSymbol from '../components/AppSymbol';
+import { RootStackParamList } from '../types';
 
 const AVATARS = [
   '\u{1F989}', '\u{1F436}', '\u{1F431}', '\u{1F98A}', '\u{1F43C}', '\u{1F428}', '\u{1F981}', '\u{1F438}',
   '\u{1F427}', '\u{1F42F}', '\u{1F984}', '\u{1F43B}', '\u{1F430}', '\u{1F435}', '\u{1F98B}', '\u{1F42C}',
 ];
 
+type ProfileNav = NativeStackNavigationProp<RootStackParamList>;
+
 const ProfileScreen: React.FC = () => {
+  const navigation = useNavigation<ProfileNav>();
   const { user, resetStats, updateAvatar } = useUser();
   const { signOut } = useAuth();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -24,6 +30,13 @@ const ProfileScreen: React.FC = () => {
   if (!user) return null;
 
   const leagueInfo = getLeagueInfo(user.league);
+  const weakWords = useMemo(
+    () =>
+      Object.values(user.mistakeBuckets || {})
+        .sort((a, b) => (b.wrong - b.correct) - (a.wrong - a.correct))
+        .slice(0, 6),
+    [user.mistakeBuckets]
+  );
 
   const localeMap = {
     tr: 'tr-TR',
@@ -94,7 +107,7 @@ const ProfileScreen: React.FC = () => {
             {(user.achievements || []).map((ach: any) => (
               <View key={ach.id} style={[styles.achievementCard, !ach.unlocked && styles.achievementLocked]}>
                 <AppSymbol symbol={ach.icon} size={22} color={ach.unlocked ? COLORS.blueDark : COLORS.hare} style={[styles.achievementIcon, !ach.unlocked && { opacity: 0.3 }]} />
-                <Text style={[styles.achievementTitle, !ach.unlocked && { color: COLORS.hare }]} numberOfLines={2}>{ach.title}</Text>
+                <Text style={[styles.achievementTitle, !ach.unlocked && { color: COLORS.hare }]} numberOfLines={2}>{tx(ach.title)}</Text>
                 {ach.unlocked && (
                   <View style={styles.unlockedBadge}>
                     <Ionicons name="checkmark" size={10} color={COLORS.white} />
@@ -102,6 +115,29 @@ const ProfileScreen: React.FC = () => {
                 )}
               </View>
             ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>{tx('Weak Words')}</Text>
+            <TouchableOpacity style={styles.sectionAction} onPress={() => navigation.navigate('MistakesNotebook')}>
+              <Text style={styles.sectionActionText}>{tx('Notebook')}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.weakWordsCard}>
+            {weakWords.length === 0 ? (
+              <Text style={styles.weakWordsEmpty}>{tx('En cok zorlandigin kelimeler burada birikir.')}</Text>
+            ) : (
+              weakWords.map((item) => (
+                <View key={item.focus} style={styles.weakWordRow}>
+                  <View style={styles.weakWordPill}>
+                    <Text style={styles.weakWordText}>{item.focus}</Text>
+                  </View>
+                  <Text style={styles.weakWordMeta}>{tx('Yanlis')} {item.wrong} • {tx('Dogru')} {item.correct}</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
@@ -169,7 +205,7 @@ const ProfileScreen: React.FC = () => {
             <View style={styles.avatarGrid}>
               {AVATARS.map((a) => (
                 <TouchableOpacity key={a} style={[styles.avatarOption, user.avatar === a && styles.avatarOptionActive]} onPress={() => handleAvatarSelect(a)}>
-                  <AppSymbol symbol={a} size={30} color={COLORS.blueDark} style={styles.avatarOptionText} />
+                  <Text style={styles.avatarOptionText}>{a}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -247,53 +283,60 @@ const ProfileScreen: React.FC = () => {
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bgSecondary },
-  header: { paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, alignItems: 'center', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.swan },
-  headerTitle: { fontSize: 20, color: COLORS.owl, ...FONTS.bold },
+  container: { flex: 1, backgroundColor: COLORS.bgCanvas },
+  header: { paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, alignItems: 'center', backgroundColor: COLORS.bgCanvas },
+  headerTitle: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
   scrollContent: { padding: 16 },
-  profileCard: { backgroundColor: COLORS.white, borderRadius: 24, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 2, borderColor: COLORS.swan },
-  avatarWrap: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 4, borderColor: COLORS.primary, position: 'relative' },
+  profileCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
+  avatarWrap: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 3, borderColor: COLORS.primary, position: 'relative' },
   avatarBig: { fontSize: 44 },
   editAvatarBadge: { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: COLORS.blue, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.white },
-  name: { fontSize: 22, color: COLORS.owl, ...FONTS.bold },
-  username: { fontSize: 14, color: COLORS.wolf, ...FONTS.regular, marginTop: 2 },
+  name: { fontSize: 24, color: COLORS.ink, ...FONTS.bold },
+  username: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 2 },
   email: { fontSize: 12, color: COLORS.hare, marginTop: 4 },
   joinDate: { fontSize: 11, color: COLORS.hare, marginTop: 6 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  statBox: { width: '47%', backgroundColor: COLORS.white, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 2, borderColor: COLORS.swan, flexGrow: 1 },
+  statBox: { width: '47%', backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: COLORS.skyLine, flexGrow: 1 },
   statIcon: { fontSize: 22, marginBottom: 4 },
-  statValue: { fontSize: 18, color: COLORS.owl, ...FONTS.bold },
-  statLabel: { fontSize: 11, color: COLORS.wolf, ...FONTS.medium, marginTop: 2 },
+  statValue: { fontSize: 18, color: COLORS.ink, ...FONTS.bold },
+  statLabel: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 2 },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 18, color: COLORS.owl, ...FONTS.bold, marginBottom: 12 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  sectionTitle: { fontSize: 18, color: COLORS.ink, ...FONTS.bold, marginBottom: 12 },
+  sectionAction: { backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.pill, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.skyLine, marginBottom: 12 },
+  sectionActionText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
   achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
-  achievementCard: { width: '30.5%', minHeight: 98, backgroundColor: COLORS.white, borderRadius: 14, padding: 10, alignItems: 'center', borderWidth: 2, borderColor: COLORS.swan, position: 'relative' },
+  achievementCard: { width: '30.5%', minHeight: 98, backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: COLORS.mintLine, position: 'relative' },
   achievementLocked: { backgroundColor: COLORS.polar, opacity: 0.6 },
   achievementIcon: { fontSize: 22, marginBottom: 4 },
-  achievementTitle: { fontSize: 10, lineHeight: 12, color: COLORS.eel, ...FONTS.medium, textAlign: 'center' },
+  achievementTitle: { fontSize: 10, lineHeight: 12, color: COLORS.ink, ...FONTS.medium, textAlign: 'center' },
   unlockedBadge: { position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.white },
-  menu: { backgroundColor: COLORS.white, borderRadius: 16, borderWidth: 2, borderColor: COLORS.swan, overflow: 'hidden', marginBottom: 16 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.swan, gap: 12 },
-  menuText: { flex: 1, fontSize: 15, color: COLORS.eel, ...FONTS.medium },
+  weakWordsCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, borderWidth: 1, borderColor: COLORS.mintLine, padding: 14, gap: 10 },
+  weakWordsEmpty: { fontSize: 13, color: COLORS.inkSoft, lineHeight: 19 },
+  weakWordRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  weakWordPill: { backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.pill, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: COLORS.skyLine },
+  weakWordText: { fontSize: 13, color: COLORS.ink, ...FONTS.bold },
+  weakWordMeta: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium },
+  menu: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, borderWidth: 1, borderColor: COLORS.mintLine, overflow: 'hidden', marginBottom: 16, ...SHADOWS.small },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.mintLine, gap: 12 },
+  menuText: { flex: 1, fontSize: 15, color: COLORS.ink, ...FONTS.medium },
   versionText: { textAlign: 'center', fontSize: 12, color: COLORS.hare, marginTop: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
-  modalTitle: { fontSize: 20, color: COLORS.owl, ...FONTS.bold, textAlign: 'center', marginBottom: 20 },
-  modalClose: { backgroundColor: COLORS.primary, borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 20, borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
+  modalContent: { backgroundColor: COLORS.bgPanel, borderTopLeftRadius: UI.radius.lg, borderTopRightRadius: UI.radius.lg, padding: 24, maxHeight: '80%' },
+  modalTitle: { fontSize: 20, color: COLORS.ink, ...FONTS.bold, textAlign: 'center', marginBottom: 20 },
+  modalClose: { backgroundColor: COLORS.primary, borderRadius: UI.radius.md, padding: 14, alignItems: 'center', marginTop: 20, borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
   modalCloseText: { color: COLORS.white, fontSize: 16, ...FONTS.bold },
   avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
-  avatarOption: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.swan },
+  avatarOption: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.bgPanelAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.skyLine },
   avatarOptionActive: { borderColor: COLORS.primary, borderWidth: 3, backgroundColor: COLORS.primaryBg },
   avatarOptionText: { fontSize: 28 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.polar },
-  infoLabel: { fontSize: 14, color: COLORS.wolf, ...FONTS.medium },
-  infoValue: { fontSize: 14, color: COLORS.owl, ...FONTS.semiBold },
+  infoLabel: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.medium },
+  infoValue: { fontSize: 14, color: COLORS.ink, ...FONTS.semiBold },
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.polar },
-  settingLabel: { fontSize: 15, color: COLORS.eel, ...FONTS.medium },
-  settingValue: { fontSize: 14, color: COLORS.wolf, ...FONTS.regular },
-  helpText: { fontSize: 14, color: COLORS.eel, lineHeight: 22, marginBottom: 8 },
-  resetButton: { marginTop: 12, padding: 14, borderRadius: 16, backgroundColor: COLORS.red, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.redDark },
+  settingLabel: { fontSize: 15, color: COLORS.ink, ...FONTS.medium },
+  settingValue: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.regular },
+  helpText: { fontSize: 14, color: COLORS.ink, lineHeight: 22, marginBottom: 8 },
+  resetButton: { marginTop: 12, padding: 14, borderRadius: UI.radius.md, backgroundColor: COLORS.red, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.redDark },
   resetButtonText: { fontSize: 14, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.5 },
 });
-
-

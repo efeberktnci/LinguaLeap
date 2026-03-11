@@ -5,13 +5,16 @@ export const COLORS = {
   primaryDark: '#46A302',
   primaryLight: '#89E219',
   primaryBg: '#DDF4BB',
+  primarySoft: '#F0F9E4',
 
   secondary: '#CE82FF',
   secondaryDark: '#A855F7',
+  secondarySoft: '#F6EDFF',
 
   accent: '#FF9600',
   accentDark: '#E08600',
   accentLight: '#FFC800',
+  accentSoft: '#FFF1DA',
 
   correct: '#58CC02',
   incorrect: '#FF4B4B',
@@ -38,6 +41,13 @@ export const COLORS = {
   bgPrimary: '#FFFFFF',
   bgSecondary: '#F7F7F7',
   bgTertiary: '#235390',
+  bgCanvas: '#F5F7F1',
+  bgPanel: '#FFFEFB',
+  bgPanelAlt: '#F8FBFF',
+  ink: '#213027',
+  inkSoft: '#55635B',
+  mintLine: '#DCEBD0',
+  skyLine: '#D6EAF8',
 
   border: '#E5E5E5',
   borderDark: '#CDCDCD',
@@ -92,4 +102,31 @@ export const SIZES = {
   xxl: 48,
   borderRadius: 16,
   borderRadiusFull: 999,
+} as const;
+
+export const UI = {
+  radius: {
+    sm: 12,
+    md: 18,
+    lg: 24,
+    pill: 999,
+  },
+  stroke: {
+    soft: 1,
+    strong: 2,
+  },
+  card: {
+    base: {
+      backgroundColor: '#FFFEFB',
+      borderColor: '#E7EFE0',
+    },
+    cool: {
+      backgroundColor: '#F8FBFF',
+      borderColor: '#D6EAF8',
+    },
+    warm: {
+      backgroundColor: '#FFF8EE',
+      borderColor: '#F8DEB9',
+    },
+  },
 } as const;

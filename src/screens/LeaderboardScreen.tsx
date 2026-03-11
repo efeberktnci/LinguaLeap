@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
-import { COLORS, FONTS } from '../theme/colors';
+import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { getLeagueInfo, formatNumber } from '../utils/helpers';
 import { LeaderboardEntry } from '../types';
@@ -145,56 +145,55 @@ const LeaderboardScreen: React.FC = () => {
 export default LeaderboardScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bgSecondary },
-  header: { paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.swan, alignItems: 'center' },
-  headerTitle: { fontSize: 20, color: COLORS.owl, ...FONTS.bold },
+  container: { flex: 1, backgroundColor: COLORS.bgCanvas },
+  header: { paddingTop: Platform.OS === 'ios' ? 56 : 40, paddingBottom: 16, paddingHorizontal: 20, backgroundColor: COLORS.bgCanvas, alignItems: 'center' },
+  headerTitle: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  leagueCard: { backgroundColor: COLORS.white, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 2, borderColor: COLORS.swan },
-  leagueIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  leagueCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
+  leagueIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.secondarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   leagueIcon: { fontSize: 44 },
-  leagueName: { fontSize: 22, color: COLORS.owl, ...FONTS.bold },
-  leagueSubtitle: { fontSize: 14, color: COLORS.wolf, marginTop: 4, textAlign: 'center' },
+  leagueName: { fontSize: 22, color: COLORS.ink, ...FONTS.bold },
+  leagueSubtitle: { fontSize: 14, color: COLORS.inkSoft, marginTop: 4, textAlign: 'center' },
   leagueStats: { flexDirection: 'row', marginTop: 20, gap: 24, alignItems: 'center' },
   leagueStatItem: { alignItems: 'center' },
-  leagueStatValue: { fontSize: 20, color: COLORS.owl, ...FONTS.bold },
-  leagueStatLabel: { fontSize: 12, color: COLORS.wolf, ...FONTS.medium, marginTop: 2 },
-  leagueStatDivider: { width: 1, height: 32, backgroundColor: COLORS.swan },
-  tabContainer: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 2, borderColor: COLORS.swan },
+  leagueStatValue: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
+  leagueStatLabel: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 2 },
+  leagueStatDivider: { width: 1, height: 32, backgroundColor: COLORS.mintLine },
+  tabContainer: { flexDirection: 'row', backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: COLORS.mintLine },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
   tabActive: { backgroundColor: COLORS.primary },
-  tabText: { fontSize: 14, color: COLORS.wolf, ...FONTS.semiBold },
+  tabText: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.semiBold },
   tabTextActive: { color: COLORS.white },
   loadingContainer: { alignItems: 'center', padding: 40 },
-  loadingText: { fontSize: 14, color: COLORS.wolf, marginTop: 12 },
-  emptyContainer: { alignItems: 'center', padding: 40, backgroundColor: COLORS.white, borderRadius: 20, borderWidth: 2, borderColor: COLORS.swan },
+  loadingText: { fontSize: 14, color: COLORS.inkSoft, marginTop: 12 },
+  emptyContainer: { alignItems: 'center', padding: 40, backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, borderWidth: 1, borderColor: COLORS.mintLine },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 20, color: COLORS.owl, ...FONTS.bold },
-  emptyDesc: { fontSize: 14, color: COLORS.wolf, marginTop: 8, textAlign: 'center' },
-  listContainer: { backgroundColor: COLORS.white, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: COLORS.swan },
+  emptyTitle: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
+  emptyDesc: { fontSize: 14, color: COLORS.inkSoft, marginTop: 8, textAlign: 'center' },
+  listContainer: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.mintLine },
   userRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: COLORS.polar },
   userRowCurrent: { backgroundColor: COLORS.primaryBg },
-  userRowTop3: { backgroundColor: '#FFFCF0' },
+  userRowTop3: { backgroundColor: COLORS.accentSoft },
   rankContainer: { width: 32, alignItems: 'center' },
   rankMedal: { fontSize: 22 },
-  rankText: { fontSize: 15, color: COLORS.wolf, ...FONTS.bold },
+  rankText: { fontSize: 15, color: COLORS.inkSoft, ...FONTS.bold },
   rankTextCurrent: { color: COLORS.primaryDark },
   userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 10 },
-  userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center' },
+  userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.bgPanelAlt, alignItems: 'center', justifyContent: 'center' },
   userAvatarCurrent: { backgroundColor: COLORS.primary },
   userAvatarText: { fontSize: 20 },
-  userName: { fontSize: 15, color: COLORS.eel, ...FONTS.semiBold },
+  userName: { fontSize: 15, color: COLORS.ink, ...FONTS.semiBold },
   userNameCurrent: { color: COLORS.primaryDark, ...FONTS.bold },
   youBadge: { fontSize: 11, color: COLORS.primary, ...FONTS.bold, marginTop: 1 },
   xpContainer: { alignItems: 'flex-end' },
-  xpValue: { fontSize: 16, color: COLORS.eel, ...FONTS.bold },
+  xpValue: { fontSize: 16, color: COLORS.ink, ...FONTS.bold },
   xpValueCurrent: { color: COLORS.primaryDark },
   xpLabel: { fontSize: 11, color: COLORS.hare, ...FONTS.medium },
   zoneInfo: { marginTop: 16, gap: 8 },
   zoneItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   zoneIndicator: { width: 12, height: 12, borderRadius: 6 },
-  zoneText: { fontSize: 13, color: COLORS.wolf },
+  zoneText: { fontSize: 13, color: COLORS.inkSoft },
 });
-
 
 
 

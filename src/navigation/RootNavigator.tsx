@@ -16,6 +16,7 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import ShopScreen from '../screens/ShopScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import LessonScreen from '../screens/LessonScreen';
+import MistakesNotebookScreen from '../screens/MistakesNotebookScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainStack = createNativeStackNavigator<RootStackParamList>();
@@ -82,6 +83,7 @@ function MainNavigator() {
     <MainStack.Navigator screenOptions={{ headerShown: false }}>
       <MainStack.Screen name="Main" component={HomeTabs} />
       <MainStack.Screen name="Lesson" component={LessonScreen} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <MainStack.Screen name="MistakesNotebook" component={MistakesNotebookScreen} options={{ presentation: 'card', animation: 'slide_from_right' }} />
     </MainStack.Navigator>
   );
 }

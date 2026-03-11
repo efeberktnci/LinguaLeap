@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '../theme/colors';
+import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { useUser, useLanguage } from '../hooks';
 import AppSymbol from './AppSymbol';
 
-const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) => {
+const TopBar: React.FC<{ showLanguage?: boolean; compact?: boolean }> = ({ showLanguage = true, compact = false }) => {
   const { user } = useUser();
   const { t, options, language, setLanguage, activeFlag } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -17,29 +17,29 @@ const TopBar: React.FC<{ showLanguage?: boolean }> = ({ showLanguage = true }) =
 
   return (
     <View style={styles.outer}>
-      <View style={styles.container}>
+      <View style={[styles.container, compact && styles.containerCompact]}>
         {showLanguage ? (
-          <TouchableOpacity style={styles.langButton} activeOpacity={0.85} onPress={() => setOpen(true)}>
-            <AppSymbol symbol={activeFlag} size={22} color={COLORS.blueDark} style={styles.flag} />
+          <TouchableOpacity style={[styles.langButton, compact && styles.langButtonCompact]} activeOpacity={0.85} onPress={() => setOpen(true)}>
+            <AppSymbol symbol={activeFlag} size={compact ? 18 : 22} color={COLORS.blueDark} style={[styles.flag, compact && styles.flagCompact]} />
           </TouchableOpacity>
         ) : (
           <View />
         )}
 
         <View style={styles.statsRow}>
-          <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Ionicons name="flame" size={16} color={COLORS.accent} />
-            <Text style={[styles.statValue, { color: COLORS.accent }]}>{user?.streak ?? 0}</Text>
+          <TouchableOpacity style={[styles.statPill, styles.statPillWarm, compact && styles.statPillCompact]} activeOpacity={0.85}>
+            <Ionicons name="flame" size={compact ? 14 : 16} color={COLORS.accent} />
+            <Text style={[styles.statValue, compact && styles.statValueCompact, { color: COLORS.accent }]}>{user?.streak ?? 0}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Ionicons name="diamond" size={16} color={COLORS.blue} />
-            <Text style={[styles.statValue, { color: COLORS.blue }]}>{user?.gems ?? 0}</Text>
+          <TouchableOpacity style={[styles.statPill, styles.statPillCool, compact && styles.statPillCompact]} activeOpacity={0.85}>
+            <Ionicons name="diamond" size={compact ? 14 : 16} color={COLORS.blue} />
+            <Text style={[styles.statValue, compact && styles.statValueCompact, { color: COLORS.blue }]}>{user?.gems ?? 0}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.statPill} activeOpacity={0.85}>
-            <Ionicons name="heart" size={16} color={COLORS.red} />
-            <Text style={[styles.statValue, { color: COLORS.red }]}>{user?.hearts ?? 0}</Text>
+          <TouchableOpacity style={[styles.statPill, styles.statPillHeart, compact && styles.statPillCompact]} activeOpacity={0.85}>
+            <Ionicons name="heart" size={compact ? 14 : 16} color={COLORS.red} />
+            <Text style={[styles.statValue, compact && styles.statValueCompact, { color: COLORS.red }]}>{user?.hearts ?? 0}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -66,43 +66,58 @@ export default TopBar;
 
 const styles = StyleSheet.create({
   outer: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: COLORS.bgCanvas,
   },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 56 : 40,
-    paddingBottom: 14,
-    backgroundColor: COLORS.white,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === 'ios' ? 48 : 30,
+    paddingBottom: 10,
+    marginHorizontal: 10,
+    marginTop: 6,
+    borderRadius: UI.radius.lg,
+    backgroundColor: COLORS.bgPanel,
+    borderWidth: UI.stroke.soft,
+    borderColor: COLORS.mintLine,
+    ...SHADOWS.small,
+  },
+  containerCompact: {
+    paddingTop: Platform.OS === 'ios' ? 42 : 24,
+    paddingBottom: 8,
+    marginTop: 2,
   },
   langButton: {
-    minWidth: 48,
-    height: 40,
-    borderRadius: 14,
+    minWidth: 42,
+    height: 34,
+    borderRadius: UI.radius.md,
     borderWidth: 1,
-    borderColor: COLORS.swan,
+    borderColor: COLORS.skyLine,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: COLORS.bgPanelAlt,
+  },
+  langButtonCompact: {
+    minWidth: 36,
+    height: 30,
   },
   flag: {
-    fontSize: 22,
+    fontSize: 19,
+  },
+  flagCompact: {
+    fontSize: 16,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   statPill: {
-    minWidth: 72,
-    height: 40,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: COLORS.snow,
+    minWidth: 60,
+    height: 34,
+    paddingHorizontal: 10,
+    borderRadius: UI.radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
     flexDirection: 'row',
@@ -110,9 +125,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
+  statPillCompact: {
+    minWidth: 54,
+    height: 30,
+    paddingHorizontal: 8,
+  },
+  statPillWarm: {
+    backgroundColor: COLORS.accentSoft,
+    borderColor: '#F6D19B',
+  },
+  statPillCool: {
+    backgroundColor: COLORS.bgPanelAlt,
+    borderColor: COLORS.skyLine,
+  },
+  statPillHeart: {
+    backgroundColor: '#FFF1F1',
+    borderColor: '#FFD8D8',
+  },
   statValue: {
-    fontSize: 16,
+    fontSize: 14,
     ...FONTS.bold,
+  },
+  statValueCompact: {
+    fontSize: 12,
   },
   modalOverlay: {
     flex: 1,
@@ -122,11 +157,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   modalCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
+    backgroundColor: COLORS.bgPanel,
+    borderRadius: UI.radius.md,
     padding: 12,
     borderWidth: 1,
-    borderColor: COLORS.swan,
+    borderColor: COLORS.mintLine,
+    ...SHADOWS.small,
   },
   modalTitle: {
     fontSize: 14,
@@ -143,7 +179,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionRowActive: {
-    backgroundColor: COLORS.primaryBg,
+    backgroundColor: COLORS.primarySoft,
   },
   optionFlag: {
     fontSize: 18,

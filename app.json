@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lingualeap.app",
-      "googleServicesFile": "./config/firebase/GoogleService-Info.plist",
+      "googleServicesFile": "./ios/LinguaLeap/GoogleService-Info.plist",
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "LinguaLeap converts speech to text to evaluate pronunciation.",
         "NSMicrophoneUsageDescription": "LinguaLeap uses microphone access to analyze pronunciation.",

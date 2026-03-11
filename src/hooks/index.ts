@@ -2,7 +2,7 @@
 import { AuthContext } from '../context/AuthContext';
 import { calculateProgress } from '../utils/helpers';
 import * as firestoreService from '../services/firestore';
-import { QuizQuestion } from '../types';
+import { AssessmentTier, LearnMode, QuizQuestion } from '../types';
 import { useLanguageContext } from '../context/LanguageContext';
 
 export function useAuth() {
@@ -52,6 +52,55 @@ export function useUser() {
     return firestoreService.refillHearts(authUser.uid, authUser.idToken);
   }, [authUser?.uid, authUser?.idToken]);
 
+  const savePlacementResult = useCallback(async (score: number, total: number, tier: AssessmentTier) => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.savePlacementResult(authUser.uid, score, total, tier, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const setActiveLearnMode = useCallback(async (mode: LearnMode) => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.setActiveLearnMode(authUser.uid, mode, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const setLearnTargetLanguage = useCallback(async (learnTargetLanguage: 'en' | 'de' | 'es' | 'tr') => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.setLearnTargetLanguage(authUser.uid, learnTargetLanguage, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const claimRewardChest = useCallback(async (chestId: string) => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.claimRewardChest(authUser.uid, chestId, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const claimBattlePassReward = useCallback(async (rewardId: string, gemReward: number) => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.claimBattlePassReward(authUser.uid, rewardId, gemReward, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const unlockBattlePassPremium = useCallback(async () => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.unlockBattlePassPremium(authUser.uid, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
+  const setLearnLevel = useCallback(async (cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2', unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2')[], placementPromptSeen = true) => {
+    if (!authUser?.uid || !authUser?.idToken) return null;
+    const profile = await firestoreService.setLearnLevel(authUser.uid, cefrLevel, unlockedCefrLevels, placementPromptSeen, authUser.idToken);
+    await refreshProfile();
+    return profile;
+  }, [authUser?.uid, authUser?.idToken, refreshProfile]);
+
   
   const updateAvatar = useCallback(async (avatar: string) => {
     if (!authUser?.uid || !authUser?.idToken) return;
@@ -76,6 +125,13 @@ export function useUser() {
     addXP,
     spendGems,
     refillHearts,
+    savePlacementResult,
+    setActiveLearnMode,
+    setLearnTargetLanguage,
+    claimRewardChest,
+    claimBattlePassReward,
+    unlockBattlePassPremium,
+    setLearnLevel,
     updateAvatar,
     resetStats,
   };
@@ -89,9 +145,10 @@ interface LessonState {
   score: number;
   totalXP: number;
   isFinished: boolean;
+  forcedFinished: boolean;
 }
 
-export function useLesson(questions: QuizQuestion[]) {
+export function useLesson(questions: QuizQuestion[], options: { disableHeartLoss?: boolean } = {}) {
   const { user, profile, refreshProfile } = useContext(AuthContext);
 
   const hearts = profile?.hearts ?? 5;
@@ -104,6 +161,7 @@ export function useLesson(questions: QuizQuestion[]) {
     score: 0,
     totalXP: 0,
     isFinished: false,
+    forcedFinished: false,
   });
 
   const currentQuestion =
@@ -120,7 +178,7 @@ export function useLesson(questions: QuizQuestion[]) {
       ? Math.round((state.score / questions.length) * 100)
       : 0;
 
-  const passed = hearts > 0;
+  const passed = hearts > 0 && (questions.length === 0 ? false : state.score / questions.length >= 0.5);
 
   const selectAnswer = useCallback(
     (answer: string) => {
@@ -148,13 +206,20 @@ export function useLesson(questions: QuizQuestion[]) {
     }));
 
     if (user?.uid && user?.idToken) {
+      await firestoreService.recordQuestionOutcome(
+        user.uid,
+        currentQuestion.focus,
+        correct,
+        user.idToken
+      );
+
       if (correct) {
         await firestoreService.addXP(
           user.uid,
           currentQuestion.xp ?? 10,
           user.idToken
         );
-      } else {
+      } else if (!options.disableHeartLoss) {
         await firestoreService.loseHeart(
           user.uid,
           user.idToken
@@ -163,7 +228,7 @@ export function useLesson(questions: QuizQuestion[]) {
 
       await refreshProfile();
     }
-  }, [state.selectedAnswer, currentQuestion, user?.uid, user?.idToken]);
+  }, [state.selectedAnswer, currentQuestion, user?.uid, user?.idToken, options.disableHeartLoss]);
 
   const continueLesson = useCallback(() => {
     if (
@@ -184,6 +249,17 @@ export function useLesson(questions: QuizQuestion[]) {
     }));
   }, [hearts, state.currentIndex, questions.length]);
 
+  const forceFinish = useCallback(() => {
+    setState((prev) => ({ ...prev, isFinished: true, forcedFinished: true, showResult: false }));
+  }, []);
+
+  const addBonusXP = useCallback(async (amount: number) => {
+    if (!user?.uid || !user?.idToken || amount <= 0) return;
+    await firestoreService.addXP(user.uid, amount, user.idToken);
+    setState((prev) => ({ ...prev, totalXP: prev.totalXP + amount }));
+    await refreshProfile();
+  }, [user?.uid, user?.idToken, refreshProfile]);
+
   const finishLesson = useCallback(
     async (lessonId: string) => {
       if (!user?.uid || !user?.idToken) return;
@@ -196,6 +272,7 @@ export function useLesson(questions: QuizQuestion[]) {
         state.score,
         questions.length,
         perfect,
+        questions.map((question) => question.id),
         user.idToken
       );
     },
@@ -213,6 +290,8 @@ export function useLesson(questions: QuizQuestion[]) {
     checkAnswer,
     continueLesson,
     finishLesson,
+    forceFinish,
+    addBonusXP,
   };
 }
 
@@ -220,7 +299,3 @@ export function useLesson(questions: QuizQuestion[]) {
 export function useLanguage() {
   return useLanguageContext();
 }
-
-
-
-

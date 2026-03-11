@@ -10,6 +10,55 @@ export interface DailyXP {
   xp: number;
 }
 
+export type AssessmentTier = 'starter' | 'explorer' | 'navigator' | 'master';
+export type LearnMode = 'standard' | 'timed' | 'review' | 'boss';
+export type CefrLevel = 'A0' | 'A1' | 'A2' | 'B1' | 'B2';
+
+export interface PlacementState {
+  completed: boolean;
+  score: number;
+  total: number;
+  tier: AssessmentTier;
+  lastTakenAt: string;
+}
+
+export interface RewardChest {
+  id: string;
+  level: number;
+  title: string;
+  rarity: 'common' | 'rare' | 'epic';
+  icon: string;
+  gems: number;
+  hearts: number;
+  xpBoostMinutes: number;
+  claimed: boolean;
+}
+
+export interface BattlePassState {
+  seasonName: string;
+  xp: number;
+  level: number;
+  premiumUnlocked: boolean;
+  claimedRewardIds: string[];
+}
+
+export interface LearnPreferences {
+  activeMode: LearnMode;
+  learnTargetLanguage: 'en' | 'de' | 'es' | 'tr';
+  recentQuestionIds: string[];
+  sessionSeeds: Record<string, number>;
+  placementPromptSeen: boolean;
+  cefrLevel: CefrLevel;
+  unlockedCefrLevels: CefrLevel[];
+}
+
+export interface MistakeBucket {
+  focus: string;
+  wrong: number;
+  correct: number;
+  lastSeen: string;
+}
+
 export type LeagueName =
   | 'Bronze'
   | 'Silver'
@@ -49,6 +98,11 @@ export interface UserProfile {
   dailyXPEarned: number;
   completedLessons: string[];
   lessonProgress: Record<string, LessonProgress>;
+  placement: PlacementState;
+  battlePass: BattlePassState;
+  rewardChests: RewardChest[];
+  learnPreferences: LearnPreferences;
+  mistakeBuckets: Record<string, MistakeBucket>;
 }
 
 export interface LessonProgress {
@@ -78,6 +132,8 @@ export interface Lesson {
   xpReward: number;
   current?: boolean;
   locked?: boolean;
+  difficulty?: AssessmentTier;
+  modeTag?: LearnMode;
 }
 
 export interface Unit {
@@ -104,6 +160,8 @@ export interface QuizQuestion {
   options?: string[];
   correctAnswer?: string;
   xp: number;
+  focus?: string;
+  difficulty?: AssessmentTier;
 }
 
 export interface LeaderboardEntry {
@@ -142,10 +200,22 @@ export interface LeagueInfo {
   next: LeagueName | null;
 }
 
+export interface LessonSessionMeta {
+  kind: 'lesson' | 'assessment' | 'challenge' | 'review';
+  mode: LearnMode | 'assessment';
+  targetLanguage?: string;
+  assessmentTier?: AssessmentTier;
+  timeLimitSec?: number;
+  multiplierEligible?: boolean;
+  saveProgress?: boolean;
+  challengeName?: string;
+}
+
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  Lesson: { lesson: Lesson; questions: QuizQuestion[] };
+  Lesson: { lesson: Lesson; questions: QuizQuestion[]; session?: LessonSessionMeta };
+  MistakesNotebook: undefined;
 };
 
 export type AuthStackParamList = {
@@ -161,7 +231,3 @@ export type TabParamList = {
   Shop: undefined;
   Profile: undefined;
 };
-
-
-
-

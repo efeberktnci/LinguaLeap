@@ -15,12 +15,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Speech from 'expo-speech';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 
-import { COLORS, FONTS } from '../theme/colors';
+import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { RootStackParamList } from '../types';
 import { useLesson, useUser, useAuth } from '../hooks';
 import ProgressBar from '../components/ProgressBar';
 import AppSymbol from '../components/AppSymbol';
 import * as firestoreService from '../services/firestore';
+import { evaluatePlacementTier, getAssessmentLabel, getCefrLevelFromTier, getUnlockedCefrLevels } from '../data/learningContent';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Lesson'>;
 
@@ -84,21 +85,44 @@ const pronunciationScore = (spoken: string, expected: string) => {
 
 const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   const { questions } = route.params;
-  const lesson = useLesson(questions);
+  const session = route.params.session;
+  const lesson = useLesson(questions, { disableHeartLoss: session?.kind === 'assessment' });
 
-  const { user } = useUser();
+  const { user, savePlacementResult, setLearnLevel } = useUser();
   const { user: authUser, refreshProfile } = useAuth();
 
   const q = lesson.currentQuestion;
   const speechRecognitionAvailable = Boolean(SpeechRecognitionModule);
+  const typeBadgeLabel =
+    session?.kind === 'assessment'
+      ? 'Assessment'
+      : session?.mode === 'timed'
+        ? 'Speed Run'
+        : session?.mode === 'boss'
+          ? 'Boss'
+          : q?.type === 'translate'
+            ? 'Ceviri'
+            : q?.type === 'select'
+              ? 'Secim'
+              : q?.type === 'fillBlank'
+                ? 'Bosluk Doldur'
+                : q?.type === 'listen'
+                  ? 'Dinleme'
+                  : q?.type === 'pronounce'
+                    ? 'Pronunciation Test'
+                    : 'Eslestirme';
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [isEvaluatingPronunciation, setIsEvaluatingPronunciation] = useState(false);
   const [micLevel, setMicLevel] = useState(0.2);
   const [pronunciationMessage, setPronunciationMessage] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(session?.timeLimitSec ?? 0);
+  const [resultTier, setResultTier] = useState<string | null>(null);
+  const [bonusXP, setBonusXP] = useState(0);
 
   const pronunciationHandledRef = useRef(false);
+  const completionHandledRef = useRef(false);
   const soundBars = useRef([
     new Animated.Value(0.18),
     new Animated.Value(0.34),
@@ -188,11 +212,51 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [q, lesson.showResult, lesson.selectAnswer, lesson.checkAnswer]);
 
   useEffect(() => {
+    if (!session?.timeLimitSec || lesson.isFinished) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          lesson.forceFinish();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [session?.timeLimitSec, lesson.isFinished, lesson.forceFinish]);
+
+  useEffect(() => {
     const saveLessonProgress = async () => {
-      if (!lesson.isFinished) return;
+      if (!lesson.isFinished || completionHandledRef.current) return;
+      completionHandledRef.current = true;
 
       try {
-        await lesson.finishLesson(route.params.lesson.id);
+        if (session?.kind === 'assessment') {
+          const tier = evaluatePlacementTier(lesson.score, questions.length);
+          const cefrLevel = getCefrLevelFromTier(tier);
+          setResultTier(`${cefrLevel} • ${getAssessmentLabel(tier)}`);
+          await savePlacementResult?.(lesson.score, questions.length, tier);
+          await setLearnLevel?.(cefrLevel, getUnlockedCefrLevels(cefrLevel), true);
+          return;
+        }
+
+        if (session?.saveProgress !== false) {
+          await lesson.finishLesson(route.params.lesson.id);
+        }
+
+        if (session?.multiplierEligible && session.timeLimitSec) {
+          const ratio = timeLeft / session.timeLimitSec;
+          const multiplier = ratio >= 0.55 ? 1.7 : ratio >= 0.3 ? 1.35 : ratio > 0 ? 1.15 : 1;
+          const extraXP = Math.max(0, Math.round(lesson.score * 8 * (multiplier - 1)));
+          if (extraXP > 0) {
+            setBonusXP(extraXP);
+            await lesson.addBonusXP(extraXP);
+          }
+        }
+
         await refreshProfile();
       } catch (error) {
         console.warn('FINISH LESSON ERROR:', error);
@@ -200,7 +264,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     };
 
     saveLessonProgress();
-  }, [lesson.isFinished, lesson, refreshProfile, route.params.lesson.id]);
+  }, [lesson.isFinished, lesson, refreshProfile, route.params.lesson.id, session, timeLeft, questions.length, savePlacementResult]);
 
   useEffect(() => {
     pronunciationHandledRef.current = false;
@@ -215,6 +279,12 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       setPronunciationMessage(null);
     }
   }, [q?.id, q?.type, speechRecognitionAvailable]);
+
+  useEffect(() => {
+    if (lesson.showResult) {
+      setIsEvaluatingPronunciation(false);
+    }
+  }, [lesson.showResult]);
 
   useEffect(() => {
     if (isRecognizing) {
@@ -376,12 +446,21 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   if (lesson.isFinished) {
+    const sessionTitle =
+      session?.kind === 'assessment'
+        ? 'Seviye Belirlendi'
+        : session?.mode === 'timed'
+          ? 'Timed Challenge Bitti'
+          : session?.mode === 'boss'
+            ? 'Boss Run Tamamlandi'
+            : 'Ders Tamamlandi';
+
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: lesson.passed ? '#F0FFF0' : '#FFF5F5' }]}>
         <View style={styles.finishedContainer}>
           <AppSymbol symbol={lesson.passed ? ICONS.party : ICONS.brokenHeart} size={54} style={styles.finishedEmoji} />
           <Text style={[styles.finishedTitle, { color: lesson.passed ? COLORS.primaryDark : COLORS.red }]}>
-            {lesson.passed ? 'Ders Tamamlandı' : 'Canların Bitti'}
+            {lesson.passed ? sessionTitle : 'Canlarin Bitti'}
           </Text>
 
           <View style={styles.statsGrid}>
@@ -389,6 +468,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
               { value: `${lesson.totalXP} XP`, label: 'Toplam XP' },
               { value: `%${lesson.accuracy}`, label: 'Doğruluk' },
               { value: `${lesson.score}/${questions.length}`, label: 'Doğru Sayısı' },
+              ...(bonusXP > 0 ? [{ value: `+${bonusXP} XP`, label: 'Hiz Bonusu' }] : []),
             ].map((stat, i) => (
               <View key={i} style={styles.statBox}>
                 <Text style={styles.statBoxValue} numberOfLines={1}>{stat.value}</Text>
@@ -405,13 +485,15 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
               color={lesson.accuracy >= 80 ? COLORS.primary : lesson.accuracy >= 50 ? COLORS.accent : COLORS.red}
               style={{ marginTop: 8 }}
             />
+            {!!resultTier && <Text style={styles.assessmentResultText}>Yeni rota: {resultTier}</Text>}
+            {!!session?.timeLimitSec && <Text style={styles.assessmentResultText}>Kalan sure: {timeLeft}s</Text>}
           </View>
 
           <TouchableOpacity
             style={[styles.finishButton, { backgroundColor: lesson.passed ? COLORS.primary : COLORS.blue }]}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.finishButtonText}>{lesson.passed ? 'DEVAM ET' : 'TEKRAR DENE'}</Text>
+            <Text style={styles.finishButtonText}>{session?.kind === 'assessment' ? 'ROTAYA DON' : lesson.passed ? 'DEVAM ET' : 'TEKRAR DENE'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -437,6 +519,13 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
           <ProgressBar progress={lesson.progress} height={14} color={COLORS.primary} />
         </View>
 
+        {!!session?.timeLimitSec && (
+          <View style={styles.timerBadge}>
+            <AppSymbol symbol="⏱️" size={14} color={COLORS.accentDark} />
+            <Text style={styles.timerText}>{timeLeft}s</Text>
+          </View>
+        )}
+
         <View style={styles.heartsContainer}>
           <AppSymbol symbol={ICONS.heart} size={18} color={COLORS.red} style={styles.heartText} />
           <Text style={styles.heartCount}>{user?.hearts ?? 0}</Text>
@@ -445,17 +534,17 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
       <View style={styles.questionContainer}>
         <View style={styles.typeBadge}>
-          <Text style={styles.typeBadgeText}>
-            {q.type === 'translate' && 'Çeviri'}
-            {q.type === 'select' && 'Seçim'}
-            {q.type === 'fillBlank' && 'Boşluk Doldur'}
-            {q.type === 'listen' && 'Dinleme'}
-            {q.type === 'pronounce' && 'Pronunciation Test'}
-            {q.type === 'match' && 'Eşleştirme'}
-          </Text>
+          <Text style={styles.typeBadgeText}>{typeBadgeLabel}</Text>
         </View>
 
         <Text style={styles.questionText}>{q.question}</Text>
+
+        {session?.mode === 'timed' && (
+          <View style={styles.rushInfoCard}>
+            <AppSymbol symbol="⏱️" size={16} color={COLORS.accentDark} />
+            <Text style={styles.rushInfoText}>Rush Mode • {timeLeft}s</Text>
+          </View>
+        )}
 
         {q.type === 'listen' && (
           <View style={styles.promptCardListen}>
@@ -625,57 +714,73 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 export default LessonScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 8 : 16, paddingBottom: 12, gap: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bgCanvas },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 8 : 16, paddingBottom: 14, gap: 12, backgroundColor: COLORS.bgCanvas },
   closeButton: { padding: 4 },
   progressBarContainer: { flex: 1 },
-  heartsContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  heartsContainer: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF1F1', paddingHorizontal: 10, paddingVertical: 7, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: '#FFD7D7' },
+  timerBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.accentSoft, paddingHorizontal: 10, paddingVertical: 7, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: '#F5D19C' },
+  timerText: { fontSize: 14, color: COLORS.accentDark, ...FONTS.bold },
   heartText: { fontSize: 18 },
   heartCount: { fontSize: 16, color: COLORS.red, ...FONTS.bold },
   questionContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
-  typeBadge: { alignSelf: 'flex-start', backgroundColor: COLORS.snow, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16 },
-  typeBadgeText: { fontSize: 13, color: COLORS.wolf, ...FONTS.medium },
-  questionText: { fontSize: 22, color: COLORS.owl, ...FONTS.bold, lineHeight: 30, marginBottom: 20 },
-  promptCard: { backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan },
-  promptCardListen: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan, gap: 12 },
+  typeBadge: { alignSelf: 'flex-start', backgroundColor: COLORS.primarySoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: UI.radius.pill, marginBottom: 16 },
+  typeBadgeText: { fontSize: 13, color: COLORS.primaryDark, ...FONTS.medium },
+  questionText: { fontSize: 24, color: COLORS.ink, ...FONTS.bold, lineHeight: 32, marginBottom: 20 },
+  rushInfoCard: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 14,
+    backgroundColor: COLORS.accentSoft,
+    borderRadius: UI.radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#F5D19C',
+  },
+  rushInfoText: { fontSize: 12, color: COLORS.accentDark, ...FONTS.bold },
+  promptCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.small },
+  promptCardListen: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: COLORS.skyLine, gap: 12, ...SHADOWS.small },
   speakerButton: { width: 50, height: 50, borderRadius: 25, backgroundColor: COLORS.blueLight + '45', alignItems: 'center', justifyContent: 'center' },
   soundWaveWrap: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 6, height: 36 },
   pronounceWaveWrap: { marginTop: 12, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 6, height: 36 },
   soundBar: { width: 8, borderRadius: 8, backgroundColor: COLORS.blue },
-  pronounceCard: { backgroundColor: COLORS.snow, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 2, borderColor: COLORS.swan },
-  pronounceWord: { fontSize: 30, color: COLORS.owl, ...FONTS.bold, textAlign: 'center' },
-  pronounceSub: { marginTop: 8, fontSize: 13, color: COLORS.wolf, textAlign: 'center', ...FONTS.medium },
+  pronounceCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 18, marginBottom: 24, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
+  pronounceWord: { fontSize: 34, color: COLORS.ink, ...FONTS.bold, textAlign: 'center' },
+  pronounceSub: { marginTop: 8, fontSize: 13, color: COLORS.inkSoft, textAlign: 'center', ...FONTS.medium },
   pronounceFallback: { marginTop: 6, fontSize: 12, color: COLORS.redDark, textAlign: 'center', ...FONTS.medium },
   pronounceButtons: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  micButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.blueDark, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  micButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.blueDark, borderRadius: UI.radius.md, paddingHorizontal: 14, paddingVertical: 12, ...SHADOWS.small },
   micButtonActive: { backgroundColor: COLORS.red },
   micButtonDisabled: { backgroundColor: COLORS.hare },
   micButtonText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
-  listenAgainButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.blueLight + '2A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  listenAgainButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.skyLine },
   listenAgainText: { color: COLORS.blueDark, fontSize: 13, ...FONTS.semiBold },
-  promptText: { fontSize: 20, color: COLORS.owl, ...FONTS.semiBold },
+  promptText: { fontSize: 20, color: COLORS.ink, ...FONTS.semiBold },
   optionsContainer: { gap: 10 },
-  option: { borderWidth: 2, borderColor: COLORS.swan, borderRadius: 14, padding: 14, backgroundColor: COLORS.white, borderBottomWidth: 4, borderBottomColor: COLORS.swan },
+  option: { borderWidth: 1, borderColor: COLORS.mintLine, borderRadius: UI.radius.md, padding: 14, backgroundColor: COLORS.bgPanel, borderBottomWidth: 4, borderBottomColor: COLORS.mintLine },
   optionSelected: { borderColor: COLORS.blue, borderBottomColor: COLORS.blueDark, backgroundColor: COLORS.blueLight + '15' },
   optionCorrect: { borderColor: COLORS.primary, borderBottomColor: COLORS.primaryDark, backgroundColor: COLORS.primaryBg },
   optionIncorrect: { borderColor: COLORS.red, borderBottomColor: COLORS.redDark, backgroundColor: COLORS.redLight + '20' },
   optionContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  optionIndex: { width: 34, height: 28, borderRadius: 8, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: COLORS.swan },
+  optionIndex: { width: 34, height: 28, borderRadius: 8, backgroundColor: COLORS.bgCanvas, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
   optionIndexSelected: { backgroundColor: COLORS.blue, borderColor: COLORS.blueDark },
   optionIndexText: { fontSize: 13, color: COLORS.wolf, ...FONTS.bold },
   optionIndexTextSelected: { color: COLORS.white },
-  optionText: { fontSize: 16, color: COLORS.eel, ...FONTS.medium, flex: 1 },
+  optionText: { fontSize: 16, color: COLORS.ink, ...FONTS.medium, flex: 1 },
   optionTextSelected: { color: COLORS.blueDark },
   optionTextCorrect: { color: COLORS.primaryDark, ...FONTS.bold },
   optionTextIncorrect: { color: COLORS.redDark },
-  bottomBar: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 34 : 16, borderTopWidth: 1, borderTopColor: COLORS.swan, backgroundColor: COLORS.white },
+  bottomBar: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 34 : 16, borderTopWidth: 1, borderTopColor: COLORS.mintLine, backgroundColor: COLORS.bgPanel },
   bottomBarCorrect: { backgroundColor: '#E8F8D8', borderTopColor: COLORS.primaryBg },
   bottomBarIncorrect: { backgroundColor: '#FFEAEA', borderTopColor: COLORS.redLight },
   resultFeedback: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   resultIcon: { fontSize: 24 },
   resultText: { fontSize: 18, ...FONTS.bold },
   correctAnswerText: { fontSize: 14, color: COLORS.redDark, ...FONTS.medium, marginTop: 2 },
-  checkButton: { backgroundColor: COLORS.primary, borderRadius: 16, padding: 16, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
+  checkButton: { backgroundColor: COLORS.primary, borderRadius: UI.radius.md, padding: 16, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
   checkButtonDisabled: { backgroundColor: COLORS.swan, borderBottomColor: COLORS.borderDark },
   checkButtonCorrect: { backgroundColor: COLORS.primary, borderBottomColor: COLORS.primaryDark },
   checkButtonIncorrect: { backgroundColor: COLORS.red, borderBottomColor: COLORS.redDark },
@@ -684,12 +789,13 @@ const styles = StyleSheet.create({
   finishedEmoji: { fontSize: 64, marginBottom: 16 },
   finishedTitle: { fontSize: 28, ...FONTS.bold, marginBottom: 24, textAlign: 'center' },
   statsGrid: { flexDirection: 'row', gap: 10, marginBottom: 24, width: '100%' },
-  statBox: { flex: 1, minHeight: 86, backgroundColor: COLORS.white, borderRadius: 14, paddingHorizontal: 8, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.swan },
-  statBoxValue: { fontSize: 19, color: COLORS.owl, ...FONTS.bold, textAlign: 'center' },
-  statBoxLabel: { fontSize: 11, lineHeight: 13, color: COLORS.wolf, ...FONTS.medium, marginTop: 6, textAlign: 'center' },
+  statBox: { flex: 1, minHeight: 86, backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, paddingHorizontal: 8, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
+  statBoxValue: { fontSize: 19, color: COLORS.ink, ...FONTS.bold, textAlign: 'center' },
+  statBoxLabel: { fontSize: 11, lineHeight: 13, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 6, textAlign: 'center' },
   accuracySection: { width: '100%', marginBottom: 30 },
-  accuracyLabel: { fontSize: 14, color: COLORS.wolf, ...FONTS.semiBold },
-  finishButton: { width: '100%', borderRadius: 16, padding: 18, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
+  accuracyLabel: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.semiBold },
+  assessmentResultText: { fontSize: 13, color: COLORS.inkSoft, ...FONTS.semiBold, marginTop: 8, textAlign: 'center' },
+  finishButton: { width: '100%', borderRadius: UI.radius.md, padding: 18, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark },
   finishButtonText: { fontSize: 17, color: COLORS.white, ...FONTS.bold, letterSpacing: 1 },
   noHeartsContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
   noHeartsEmoji: { fontSize: 64, marginBottom: 16 },
@@ -697,7 +803,7 @@ const styles = StyleSheet.create({
   noHeartsDesc: { fontSize: 15, color: COLORS.wolf, textAlign: 'center', marginBottom: 24 },
   heartsDisplay: { flexDirection: 'row', gap: 8, marginBottom: 32 },
   heartIcon: { fontSize: 36 },
-  refillButton: { backgroundColor: COLORS.primary, borderRadius: 16, padding: 18, width: '100%', alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark, marginBottom: 12 },
+  refillButton: { backgroundColor: COLORS.primary, borderRadius: UI.radius.md, padding: 18, width: '100%', alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.primaryDark, marginBottom: 12 },
   refillButtonText: { fontSize: 16, color: COLORS.white, ...FONTS.bold, letterSpacing: 1 },
   exitButton: { padding: 14, width: '100%', alignItems: 'center' },
   exitButtonText: { fontSize: 16, color: COLORS.wolf, ...FONTS.semiBold },

@@ -52,6 +52,37 @@ export const USER_PROFILE: UserProfile = {
   dailyXPEarned: 35,
   completedLessons: [],
   lessonProgress: {},
+  placement: {
+    completed: true,
+    score: 9,
+    total: 12,
+    tier: 'navigator',
+    lastTakenAt: '2026-03-10T09:00:00.000Z',
+  },
+  battlePass: {
+    seasonName: 'Spring Sprint',
+    xp: 540,
+    level: 5,
+    premiumUnlocked: false,
+    claimedRewardIds: ['bp_1', 'bp_2'],
+  },
+  rewardChests: [
+    { id: 'level_12_common', level: 12, title: 'Level 12 Chest', rarity: 'common', icon: '🎁', gems: 25, hearts: 1, xpBoostMinutes: 5, claimed: false },
+  ],
+  learnPreferences: {
+    activeMode: 'standard',
+    learnTargetLanguage: 'en',
+    recentQuestionIds: [],
+    sessionSeeds: {},
+    placementPromptSeen: true,
+    cefrLevel: 'B1',
+    unlockedCefrLevels: ['A0', 'A1', 'A2', 'B1'],
+  },
+  mistakeBuckets: {
+    friend: { focus: 'friend', wrong: 4, correct: 1, lastSeen: '2026-03-10T11:00:00.000Z' },
+    station: { focus: 'station', wrong: 3, correct: 2, lastSeen: '2026-03-10T12:00:00.000Z' },
+    meeting: { focus: 'meeting', wrong: 2, correct: 1, lastSeen: '2026-03-10T12:30:00.000Z' },
+  },
 };
 
 export const LANGUAGES: Language[] = [
@@ -205,4 +236,3 @@ export const DAILY_QUESTS: DailyQuest[] = [
   { id: 'dq_2', title: '20 XP kazan', icon: '⚡', progress: 35, target: 20, xpReward: 5, completed: true },
   { id: 'dq_3', title: 'Hatasız ders bitir', icon: '🎯', progress: 0, target: 1, xpReward: 15, completed: false },
 ];
-

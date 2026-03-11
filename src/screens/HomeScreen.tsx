@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SHADOWS } from '../theme/colors';
+import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { calculateProgress } from '../utils/helpers';
 import ProgressBar from '../components/ProgressBar';
 import TopBar from '../components/TopBar';
 import AppSymbol from '../components/AppSymbol';
 import { UNITS } from '../data/mockData';
+import { BATTLE_PASS_PRICE_LABEL, getBattlePassRewardPreview } from '../data/learningContent';
 
 const DAILY_GOAL = 250;
 
@@ -19,7 +20,7 @@ type LevelCardTheme = {
 };
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { user } = useUser();
+  const { user, claimRewardChest } = useUser();
   const { refreshProfile } = useAuth();
   const { t, tx } = useLanguage();
 
@@ -50,6 +51,10 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const dailyGoalReached = cappedDailyXP >= DAILY_GOAL;
 
   const levelProgress = calculateProgress(user.currentXP, user.xpToNextLevel);
+  const battlePass = user.battlePass;
+  const nextBattlePassReward = getBattlePassRewardPreview(battlePass.level);
+  const battlePassProgress = ((battlePass.xp % 120) || 0) / 120;
+  const unclaimedChest = (user.rewardChests || []).find((chest: any) => !chest.claimed);
 
   // Seviye görünümü: levele göre tema
   const level = user.level ?? 1;
@@ -163,9 +168,16 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     <View style={styles.container}>
       <TopBar />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Karsilama */}
-        <View style={styles.greetingCard}>
+        <View style={styles.heroCard}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTag}>
+              <AppSymbol symbol="🌟" size={14} color={COLORS.primaryDark} style={styles.heroTagIcon} />
+              <Text style={styles.heroTagText}>{tx('Bugun odakta kal')}</Text>
+            </View>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
+            </View>
+          </View>
           <View style={styles.greetingLeft}>
             <Text style={styles.greeting}>{getLocalizedGreeting()},</Text>
             <Text style={styles.userName}>{user.name}!</Text>
@@ -174,9 +186,22 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <View style={styles.avatarContainer}>
             <AppSymbol symbol={user.avatar} size={34} color={COLORS.blueDark} style={styles.avatar} />
           </View>
+          <View style={styles.heroStatsRow}>
+            <View style={[styles.heroStatCard, styles.heroStatCardPrimary]}>
+              <Text style={styles.heroStatValue}>{completedCount}</Text>
+              <Text style={styles.heroStatLabel}>{tx('Tamamlanan')}</Text>
+            </View>
+            <View style={[styles.heroStatCard, styles.heroStatCardCool]}>
+              <Text style={styles.heroStatValue}>{user.streak}</Text>
+              <Text style={styles.heroStatLabel}>{tx('Seri')}</Text>
+            </View>
+            <View style={[styles.heroStatCard, styles.heroStatCardWarm]}>
+              <Text style={styles.heroStatValue}>{user.level}</Text>
+              <Text style={styles.heroStatLabel}>{t('home.level')}</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Streak */}
         <View style={styles.streakCard}>
           <View style={styles.streakLeft}>
             <AppSymbol symbol="🔥" size={28} color={COLORS.accent} style={styles.streakFire} />
@@ -193,7 +218,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             {(user.weeklyXP || []).map((day: any, index: number) => (
               <View key={index} style={styles.dayDot}>
                 <View style={[styles.dot, day.xp > 0 ? styles.dotActive : styles.dotInactive]}>
-                  {day.xp > 0 && <Ionicons name="checkmark" size={10} color={COLORS.white} />}
+                  {day.xp > 0 && <AppSymbol symbol="✓" size={10} color={COLORS.white} style={styles.dayCheckIcon} />}
                 </View>
                 <Text style={styles.dayLabel}>{tx(day.day)}</Text>
               </View>
@@ -201,7 +226,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Günlük Hedef */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('home.dailyGoal')}</Text>
@@ -211,7 +235,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           {dailyGoalReached && <Text style={styles.goalComplete}>{tx('Gunluk hedefe ulastin!')}</Text>}
         </View>
 
-        {/* Seviye */}
         <View style={[styles.levelCard, { backgroundColor: levelTheme.backgroundColor, borderColor: levelTheme.borderColor }]}>
           <View style={styles.levelRow}>
             <View style={[styles.levelBadge, { backgroundColor: levelTheme.badgeColor }]}>
@@ -225,7 +248,45 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Aktif Kurslar */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{tx('Battle Pass')}</Text>
+          <View style={styles.battlePassCard}>
+            <View style={styles.battlePassHeader}>
+              <View>
+                <Text style={styles.battlePassTitle}>{tx(battlePass.seasonName)}</Text>
+                <Text style={styles.battlePassSub}>{tx('Seviye')} {battlePass.level} • {tx('Sonraki odul')}: {nextBattlePassReward.title}</Text>
+              </View>
+              <View style={styles.battlePassBadge}>
+                <AppSymbol symbol={nextBattlePassReward.icon} size={18} color={COLORS.blueDark} />
+                <Text style={styles.battlePassBadgeText}>+{nextBattlePassReward.gems}</Text>
+              </View>
+            </View>
+            <ProgressBar progress={battlePassProgress} height={12} color={COLORS.blue} style={{ marginTop: 12 }} />
+            <Text style={styles.battlePassPriceText}>{BATTLE_PASS_PRICE_LABEL}</Text>
+            <TouchableOpacity style={styles.battlePassButton} onPress={() => navigation.navigate('Shop')}>
+              <Text style={styles.battlePassButtonText}>{tx("SHOP'TA BATTLE PASS'I AC")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {unclaimedChest && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{tx('Seviye Kutusu')}</Text>
+            <View style={styles.chestCard}>
+              <View style={styles.chestIconWrap}>
+                <AppSymbol symbol={unclaimedChest.icon} size={26} color={COLORS.accentDark} />
+              </View>
+              <View style={styles.chestInfo}>
+                <Text style={styles.chestTitle}>{unclaimedChest.title}</Text>
+                <Text style={styles.chestSubtitle}>+{unclaimedChest.gems} gem • +{unclaimedChest.hearts} can • {unclaimedChest.xpBoostMinutes} dk boost</Text>
+              </View>
+              <TouchableOpacity style={styles.chestButton} onPress={() => claimRewardChest?.(unclaimedChest.id)}>
+                <Text style={styles.chestButtonText}>{tx('AC')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('home.activeCourses')}</Text>
           <View style={styles.coursesRow}>
@@ -240,7 +301,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Günlük Görevler */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('home.dailyQuests')}</Text>
           {quests.map((quest) => {
@@ -268,7 +328,6 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           })}
         </View>
 
-        {/* Hızlı Başlat */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
           <View style={styles.quickActions}>
@@ -292,61 +351,86 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bgSecondary },
+  container: { flex: 1, backgroundColor: COLORS.bgCanvas },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  greetingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 2, borderColor: COLORS.swan },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 28 },
+  heroCard: { overflow: 'hidden', backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 20, marginBottom: 18, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
+  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
+  heroTag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: COLORS.primarySoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: UI.radius.pill },
+  heroTagIcon: { fontSize: 14 },
+  heroTagText: { fontSize: 12, color: COLORS.primaryDark, ...FONTS.bold },
+  heroBadge: { backgroundColor: COLORS.bgPanelAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: COLORS.skyLine },
+  heroBadgeText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
   greetingLeft: { flex: 1 },
-  greeting: { fontSize: 16, color: COLORS.wolf, ...FONTS.medium },
-  userName: { fontSize: 26, color: COLORS.owl, ...FONTS.bold, marginTop: 2 },
-  greetingSub: { fontSize: 13, color: COLORS.hare, ...FONTS.regular, marginTop: 4 },
-  avatarContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+  greeting: { fontSize: 16, color: COLORS.inkSoft, ...FONTS.medium },
+  userName: { fontSize: 30, color: COLORS.ink, ...FONTS.bold, marginTop: 2 },
+  greetingSub: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 6, maxWidth: '80%' },
+  avatarContainer: { position: 'absolute', right: 20, top: 62, width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
   avatar: { fontSize: 36 },
-  streakCard: { backgroundColor: COLORS.white, borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 2, borderColor: '#FFE0B2' },
+  heroStatsRow: { flexDirection: 'row', gap: 10, marginTop: 22 },
+  heroStatCard: { flex: 1, borderRadius: UI.radius.md, paddingVertical: 14, paddingHorizontal: 12, borderWidth: 1 },
+  heroStatCardPrimary: { backgroundColor: COLORS.primarySoft, borderColor: COLORS.mintLine },
+  heroStatCardCool: { backgroundColor: COLORS.bgPanelAlt, borderColor: COLORS.skyLine },
+  heroStatCardWarm: { backgroundColor: COLORS.accentSoft, borderColor: '#F4D6A2' },
+  heroStatValue: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
+  heroStatLabel: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 4 },
+  streakCard: { backgroundColor: UI.card.warm.backgroundColor, borderRadius: UI.radius.lg, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: UI.card.warm.borderColor },
   streakLeft: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   streakFire: { fontSize: 36 },
-  streakCount: { fontSize: 18, color: COLORS.owl, ...FONTS.bold },
-  streakSub: { fontSize: 13, color: COLORS.wolf, ...FONTS.regular, marginTop: 2 },
+  streakCount: { fontSize: 22, color: COLORS.ink, ...FONTS.bold },
+  streakSub: { fontSize: 13, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 2 },
   weekDots: { flexDirection: 'row', justifyContent: 'space-around' },
   dayDot: { alignItems: 'center', gap: 4 },
   dot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   dotActive: { backgroundColor: COLORS.accent },
-  dotInactive: { backgroundColor: COLORS.swan },
-  dayLabel: { fontSize: 11, color: COLORS.wolf, ...FONTS.medium },
-  section: { marginBottom: 20 },
+  dotInactive: { backgroundColor: '#E6E2DB' },
+  dayCheckIcon: { fontSize: 10 },
+  dayLabel: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.medium },
+  section: { marginBottom: 22 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { fontSize: 18, color: COLORS.owl, ...FONTS.bold, marginBottom: 12 },
-  sectionBadge: { fontSize: 14, color: COLORS.black, ...FONTS.bold, marginBottom: 12 },
+  sectionTitle: { fontSize: 18, color: COLORS.ink, ...FONTS.bold, marginBottom: 12 },
+  sectionBadge: { fontSize: 14, color: COLORS.ink, ...FONTS.bold, marginBottom: 12 },
   goalComplete: { fontSize: 14, color: COLORS.primaryDark, ...FONTS.semiBold, marginTop: 8, textAlign: 'center' },
-  levelCard: { backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 2, borderColor: COLORS.swan },
+  levelCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, padding: 18, marginBottom: 18, borderWidth: 1, borderColor: COLORS.mintLine },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  levelBadge: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center' },
+  levelBadge: { width: 54, height: 54, borderRadius: 27, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center' },
   levelNumber: { fontSize: 20, color: COLORS.white, ...FONTS.bold },
-  levelInfo: { flex: 1 },
-  levelTitle: { fontSize: 16, color: COLORS.owl, ...FONTS.bold },
-  levelXP: { fontSize: 12, color: COLORS.wolf, ...FONTS.regular, marginTop: 4 },
+  levelInfo: { flex: 1, gap: 2 },
+  levelTitle: { fontSize: 16, color: COLORS.ink, ...FONTS.bold },
+  levelXP: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 4 },
   coursesRow: { flexDirection: 'row', gap: 12 },
-  courseCard: { flex: 1, backgroundColor: COLORS.white, borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 2, borderColor: COLORS.swan },
-  courseFlag: { fontSize: 32 },
-  courseName: { fontSize: 14, color: COLORS.owl, ...FONTS.semiBold, marginTop: 6 },
-  coursePercent: { fontSize: 12, color: COLORS.wolf, ...FONTS.medium, marginTop: 4 },
-  questCard: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: COLORS.white, borderRadius: 14, borderWidth: 2, borderColor: COLORS.swan, marginBottom: 8 },
-  questCardDone: { borderColor: COLORS.primaryBg, backgroundColor: '#F8FFF0' },
-  questIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.snow, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  courseCard: { flex: 1, backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: COLORS.skyLine },
+  courseFlag: { fontSize: 28, color: COLORS.blueDark, ...FONTS.bold },
+  courseName: { fontSize: 14, color: COLORS.ink, ...FONTS.semiBold, marginTop: 6 },
+  coursePercent: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 4 },
+  questCard: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, borderWidth: 1, borderColor: COLORS.mintLine, marginBottom: 10 },
+  questCardDone: { borderColor: COLORS.mintLine, backgroundColor: COLORS.primarySoft },
+  questIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.bgCanvas, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   questIcon: { fontSize: 20 },
   questContent: { flex: 1 },
-  questTitle: { fontSize: 14, color: COLORS.eel, ...FONTS.semiBold },
+  questTitle: { fontSize: 14, color: COLORS.ink, ...FONTS.semiBold },
   questTitleDone: { color: COLORS.primaryDark },
   questReward: { marginLeft: 12 },
   questXP: { fontSize: 13, color: COLORS.accent, ...FONTS.bold },
   questCheck: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   questCheckText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
   quickActions: { flexDirection: 'row', gap: 12 },
-  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, gap: 8, ...SHADOWS.medium },
+  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: UI.radius.md, gap: 8, ...SHADOWS.medium },
   quickActionText: { fontSize: 15, color: COLORS.white, ...FONTS.bold },
+  battlePassCard: { backgroundColor: '#12273A', borderRadius: UI.radius.lg, padding: 18, ...SHADOWS.medium },
+  battlePassHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  battlePassTitle: { fontSize: 18, color: COLORS.white, ...FONTS.bold },
+  battlePassSub: { fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 6, maxWidth: 220 },
+  battlePassBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.white, borderRadius: UI.radius.pill, paddingHorizontal: 10, paddingVertical: 8 },
+  battlePassBadgeText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
+  battlePassPriceText: { marginTop: 10, fontSize: 12, color: 'rgba(255,255,255,0.72)', ...FONTS.semiBold },
+  battlePassButton: { marginTop: 14, backgroundColor: COLORS.accent, borderRadius: UI.radius.md, paddingVertical: 14, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: COLORS.accentDark },
+  battlePassButtonText: { fontSize: 13, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.8 },
+  chestCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.accentSoft, borderRadius: UI.radius.md, padding: 16, borderWidth: 1, borderColor: '#F4D6A2' },
+  chestIconWrap: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFE2B6', alignItems: 'center', justifyContent: 'center' },
+  chestInfo: { flex: 1 },
+  chestTitle: { fontSize: 15, color: COLORS.ink, ...FONTS.bold },
+  chestSubtitle: { fontSize: 12, color: COLORS.inkSoft, marginTop: 4, lineHeight: 18 },
+  chestButton: { backgroundColor: COLORS.accentDark, borderRadius: UI.radius.md, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: '#A86200' },
+  chestButtonText: { fontSize: 12, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.8 },
 });
-
-
-
-
-
