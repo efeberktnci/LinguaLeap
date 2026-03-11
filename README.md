@@ -1,4 +1,4 @@
-# LinguaLeap
+# LinguaLeap    
 
 LinguaLeap, oyunlaştırılmış dil öğrenme deneyimini modern mobil ürün diliyle birleştiren bir React Native / Expo uygulaması. Uygulama; gerçek kullanıcı hesabı, seviye sistemi, battle pass, günlük hedefler, lig tablosu, weak words takibi, placement assessment ve telaffuz odaklı ders akışlarıyla birlikte çalışır.
 
@@ -280,7 +280,8 @@ npm start
 
 iOS simülatör:
 
-```bash
+```bash![24d63e19-f406-4cb5-b1be-8cac00136f24](https://github.com/user-attachments/assets/9e8ef7f7-492f-40a3-9b9d-b2c585c48dc0)
+
 npm run ios
 ```
 
