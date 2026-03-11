@@ -123,6 +123,8 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const pronunciationHandledRef = useRef(false);
   const completionHandledRef = useRef(false);
+  const micPressActiveRef = useRef(false);
+  const recognitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const soundBars = useRef([
     new Animated.Value(0.18),
     new Animated.Value(0.34),
@@ -161,11 +163,19 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     const startSub = SpeechRecognitionModule.addListener('start', () => {
       setIsRecognizing(true);
       setMicLevel(0.2);
+      if (!micPressActiveRef.current) {
+        SpeechRecognitionModule?.stop?.();
+        setIsRecognizing(false);
+        setPronunciationMessage('Basili tutarak konus.');
+      }
     });
 
     const endSub = SpeechRecognitionModule.addListener('end', () => {
       setIsRecognizing(false);
       setMicLevel(0.2);
+      if (!lesson.showResult && !pronunciationHandledRef.current) {
+        setPronunciationMessage('Ses algilanmadi. Basili tutup tekrar dene.');
+      }
     });
 
     const errorSub = SpeechRecognitionModule.addListener('error', () => {
@@ -186,6 +196,11 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
       const transcript = (event?.results?.[0]?.transcript ?? '').trim();
       const isFinal = Boolean(event?.isFinal);
       if (!isFinal || !transcript) return;
+
+      if (recognitionTimeoutRef.current) {
+        clearTimeout(recognitionTimeoutRef.current);
+        recognitionTimeoutRef.current = null;
+      }
 
       pronunciationHandledRef.current = true;
       const expected = (q.correctAnswer ?? '').trim();
@@ -271,6 +286,11 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     setIsRecognizing(false);
     setIsEvaluatingPronunciation(false);
     setMicLevel(0.2);
+    micPressActiveRef.current = false;
+    if (recognitionTimeoutRef.current) {
+      clearTimeout(recognitionTimeoutRef.current);
+      recognitionTimeoutRef.current = null;
+    }
     SpeechRecognitionModule?.stop?.();
 
     if (q?.type === 'pronounce' && !speechRecognitionAvailable) {
@@ -320,6 +340,9 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
     () => () => {
       Speech.stop();
       SpeechRecognitionModule?.stop?.();
+      if (recognitionTimeoutRef.current) {
+        clearTimeout(recognitionTimeoutRef.current);
+      }
     },
     []
   );
@@ -372,6 +395,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handlePronunciationStart = useCallback(async () => {
     if (!q || q.type !== 'pronounce' || lesson.showResult || isRecognizing) return;
+    micPressActiveRef.current = true;
 
     if (!SpeechRecognitionModule) {
       setPronunciationMessage('Mikrofon bu buildde desteklenmiyor. Aşağıdan doğru kelimeyi seç.');
@@ -387,7 +411,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
 
       pronunciationHandledRef.current = false;
       setMicLevel(0.2);
-      setPronunciationMessage('Konuş... parmağını çekince dinleme bitecek.');
+      setPronunciationMessage('Konus... birakinca dinleme biter.');
 
       SpeechRecognitionModule.start?.({
         lang: q.audioLanguage ?? 'en-US',
@@ -396,15 +420,32 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         continuous: false,
         volumeChangeEventOptions: { enabled: true, intervalMillis: 80 },
       });
+
+      if (recognitionTimeoutRef.current) {
+        clearTimeout(recognitionTimeoutRef.current);
+      }
+      recognitionTimeoutRef.current = setTimeout(() => {
+        SpeechRecognitionModule?.stop?.();
+        setIsRecognizing(false);
+        setPronunciationMessage('Cok kisa surdu. Basili tutup net konus.');
+      }, 4500);
     } catch {
       setPronunciationMessage('Mikrofon başlatılamadı. Tekrar dene.');
     }
   }, [q, lesson.showResult, isRecognizing]);
 
   const handlePronunciationStop = useCallback(() => {
-    if (!isRecognizing) return;
+    micPressActiveRef.current = false;
+    if (recognitionTimeoutRef.current) {
+      clearTimeout(recognitionTimeoutRef.current);
+      recognitionTimeoutRef.current = null;
+    }
+    if (!isRecognizing) {
+      setPronunciationMessage('Basili tut butonuna geri donebilirsin.');
+      return;
+    }
     SpeechRecognitionModule?.stop?.();
-    setPronunciationMessage('Dinleme bitti, sonuç işleniyor...');
+    setPronunciationMessage('Dinleme bitti, sonuc isleniyor...');
     setIsRecognizing(false);
   }, [isRecognizing]);
 

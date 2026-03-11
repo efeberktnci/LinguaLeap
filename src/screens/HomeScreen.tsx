@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SHADOWS, UI } from '../theme/colors';
 import { useUser, useAuth, useLanguage } from '../hooks';
 import { calculateProgress } from '../utils/helpers';
@@ -8,7 +7,15 @@ import ProgressBar from '../components/ProgressBar';
 import TopBar from '../components/TopBar';
 import AppSymbol from '../components/AppSymbol';
 import { UNITS } from '../data/mockData';
-import { BATTLE_PASS_PRICE_LABEL, getBattlePassRewardPreview } from '../data/learningContent';
+import {
+  BATTLE_PASS_PRICE_LABEL,
+  getBattlePassRewardPreview,
+  getChallengeQuestions,
+  getLearnModeCards,
+  getPlacementAssessmentQuestions,
+  getTierFromCefrLevel,
+} from '../data/learningContent';
+import { LearnModeCard, LearnTargetLanguage } from '../data/learningContent';
 
 const DAILY_GOAL = 250;
 
@@ -22,7 +29,7 @@ type LevelCardTheme = {
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, claimRewardChest } = useUser();
   const { refreshProfile } = useAuth();
-  const { t, tx } = useLanguage();
+  const { t, tx, language } = useLanguage();
 
   const getLocalizedGreeting = () => {
     const hour = new Date().getHours();
@@ -101,6 +108,17 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   // Tamamlanan ders sayısı
   const completedCount = (user.completedLessons || []).length;
+  const targetLanguage = (user.learnPreferences?.learnTargetLanguage as LearnTargetLanguage) ?? (language === 'en' ? 'tr' : 'en');
+  const placementTier = getTierFromCefrLevel((user.learnPreferences?.cefrLevel as any) ?? 'A0');
+  const recentQuestionIds = user.learnPreferences?.recentQuestionIds ?? [];
+  const weakFocuses = Object.values(user.mistakeBuckets ?? {})
+    .sort((a, b) => (b.wrong - b.correct) - (a.wrong - a.correct))
+    .slice(0, 4)
+    .map((item) => item.focus);
+  const extraGames = useMemo(
+    () => getLearnModeCards('standard', placementTier).filter((card) => ['story_cafe', 'conversation_checkin', 'review_notebook'].includes(card.id)),
+    [placementTier]
+  );
 
   // Hatasız ünite tamamlandı mı? (bir ünitedeki tüm dersler tam taç)
   const lessonProgressMap = user.lessonProgress || {};
@@ -164,6 +182,56 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return { id: courseId, name: courseId, flag: '🌍', progress: 0 };
   });
 
+  const handlePlacementStart = () => {
+    const questions = getPlacementAssessmentQuestions(language, targetLanguage, recentQuestionIds);
+    navigation.navigate('Lesson', {
+      lesson: {
+        id: 'placement_assessment',
+        type: 'trophy',
+        title: 'Placement Assessment',
+        completed: false,
+        crowns: 0,
+        maxCrowns: 1,
+        xpReward: 0,
+      },
+      questions,
+      session: {
+        kind: 'assessment',
+        mode: 'assessment',
+        targetLanguage,
+        saveProgress: false,
+      },
+    });
+  };
+
+  const handleExtraGamePress = (card: LearnModeCard) => {
+    const questions = getChallengeQuestions(card, language, targetLanguage, placementTier, recentQuestionIds, weakFocuses);
+    navigation.navigate('Lesson', {
+      lesson: {
+        id: card.id,
+        type: card.mode === 'boss' ? 'trophy' : card.mode === 'review' ? 'dumbbell' : 'star',
+        title: card.title,
+        completed: false,
+        crowns: 0,
+        maxCrowns: 1,
+        xpReward: Math.round(20 * card.xpBoost),
+        difficulty: placementTier,
+        modeTag: card.mode,
+      },
+      questions,
+      session: {
+        kind: card.mode === 'review' ? 'review' : 'challenge',
+        mode: card.mode,
+        targetLanguage,
+        assessmentTier: placementTier,
+        saveProgress: false,
+        multiplierEligible: card.mode === 'timed',
+        timeLimitSec: card.timeLimitSec,
+        challengeName: card.title,
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <TopBar />
@@ -178,13 +246,14 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
               <Text style={styles.heroBadgeText}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
             </View>
           </View>
-          <View style={styles.greetingLeft}>
-            <Text style={styles.greeting}>{getLocalizedGreeting()},</Text>
-            <Text style={styles.userName}>{user.name}!</Text>
-            <Text style={styles.greetingSub}>{tx('Derslerine devam edelim mi?')}</Text>
-          </View>
-          <View style={styles.avatarContainer}>
-            <AppSymbol symbol={user.avatar} size={34} color={COLORS.blueDark} style={styles.avatar} />
+          <View style={styles.heroMainRow}>
+            <View style={styles.greetingLeft}>
+              <Text style={styles.greeting}>{getLocalizedGreeting()}, {user.name}!</Text>
+              <Text style={styles.greetingSub}>{tx('Derslerine devam edelim mi?')}</Text>
+            </View>
+            <View style={styles.avatarContainer}>
+              <AppSymbol symbol={user.avatar} size={28} color={COLORS.blueDark} style={styles.avatar} />
+            </View>
           </View>
           <View style={styles.heroStatsRow}>
             <View style={[styles.heroStatCard, styles.heroStatCardPrimary]}>
@@ -201,6 +270,23 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </View>
         </View>
+
+        {!user.placement?.completed && (
+          <View style={styles.section}>
+            <View style={styles.placementCard}>
+              <View style={styles.placementIconWrap}>
+                <AppSymbol symbol="🎯" size={20} color={COLORS.accentDark} />
+              </View>
+              <View style={styles.placementInfo}>
+                <Text style={styles.placementTitle}>{tx('Seviye belirleme sinavi hazir')}</Text>
+                <Text style={styles.placementText}>{tx('Sinavi bitirince uniteler ve sorular seviyene gore sertlesecek.')}</Text>
+              </View>
+              <TouchableOpacity style={styles.placementCta} onPress={handlePlacementStart}>
+                <Text style={styles.placementCtaText}>{tx('TESTE GIR')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <View style={styles.streakCard}>
           <View style={styles.streakLeft}>
@@ -329,17 +415,27 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('home.quickStart')}</Text>
-          <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.primary }]} onPress={() => navigation.navigate('Learn')}>
-              <Ionicons name="play" size={24} color={COLORS.white} />
-              <Text style={styles.quickActionText}>{t('home.continueLesson')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.quickAction, { backgroundColor: COLORS.blue }]} onPress={() => navigation.navigate('Learn')}>
-              <Ionicons name="refresh" size={24} color={COLORS.white} />
-              <Text style={styles.quickActionText}>{t('home.review')}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{tx('Ekstra Oyunlar')}</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Learn')}>
+              <Text style={styles.sectionLink}>{tx('Tumunu Gor')}</Text>
             </TouchableOpacity>
           </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.extraGamesRail}>
+            {extraGames.map((card) => (
+              <TouchableOpacity key={card.id} style={styles.extraGameCard} activeOpacity={0.9} onPress={() => handleExtraGamePress(card)}>
+                <View style={styles.extraGameIconWrap}>
+                  <AppSymbol symbol={card.icon} size={22} color={COLORS.blueDark} />
+                </View>
+                <Text style={styles.extraGameTitle}>{card.title}</Text>
+                <Text style={styles.extraGameSubtitle} numberOfLines={2}>{card.subtitle}</Text>
+                <View style={styles.extraGameMetaRow}>
+                  <Text style={styles.extraGameMeta}>XP x{card.xpBoost.toFixed(1)}</Text>
+                  <Text style={styles.extraGameMeta}>{card.timeLimitSec ? `${card.timeLimitSec}s` : tx('Adaptif')}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         <View style={{ height: 32 }} />
@@ -354,26 +450,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgCanvas },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 28 },
-  heroCard: { overflow: 'hidden', backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 20, marginBottom: 18, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
-  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
-  heroTag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: COLORS.primarySoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: UI.radius.pill },
+  heroCard: { overflow: 'hidden', backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.lg, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: COLORS.mintLine, ...SHADOWS.medium },
+  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  heroTag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: COLORS.primarySoft, paddingHorizontal: 9, paddingVertical: 5, borderRadius: UI.radius.pill },
   heroTagIcon: { fontSize: 14 },
   heroTagText: { fontSize: 12, color: COLORS.primaryDark, ...FONTS.bold },
-  heroBadge: { backgroundColor: COLORS.bgPanelAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: COLORS.skyLine },
+  heroBadge: { backgroundColor: COLORS.bgPanelAlt, paddingHorizontal: 10, paddingVertical: 5, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: COLORS.skyLine },
   heroBadgeText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
+  heroMainRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   greetingLeft: { flex: 1 },
-  greeting: { fontSize: 16, color: COLORS.inkSoft, ...FONTS.medium },
-  userName: { fontSize: 30, color: COLORS.ink, ...FONTS.bold, marginTop: 2 },
-  greetingSub: { fontSize: 14, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 6, maxWidth: '80%' },
-  avatarContainer: { position: 'absolute', right: 20, top: 62, width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
-  avatar: { fontSize: 36 },
-  heroStatsRow: { flexDirection: 'row', gap: 10, marginTop: 22 },
-  heroStatCard: { flex: 1, borderRadius: UI.radius.md, paddingVertical: 14, paddingHorizontal: 12, borderWidth: 1 },
+  greeting: { fontSize: 18, color: COLORS.ink, ...FONTS.bold, lineHeight: 24 },
+  greetingSub: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 3, maxWidth: '92%' },
+  avatarContainer: { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
+  avatar: { fontSize: 28 },
+  heroStatsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  heroStatCard: { flex: 1, borderRadius: UI.radius.md, paddingVertical: 10, paddingHorizontal: 10, borderWidth: 1 },
   heroStatCardPrimary: { backgroundColor: COLORS.primarySoft, borderColor: COLORS.mintLine },
   heroStatCardCool: { backgroundColor: COLORS.bgPanelAlt, borderColor: COLORS.skyLine },
   heroStatCardWarm: { backgroundColor: COLORS.accentSoft, borderColor: '#F4D6A2' },
-  heroStatValue: { fontSize: 20, color: COLORS.ink, ...FONTS.bold },
-  heroStatLabel: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 4 },
+  heroStatValue: { fontSize: 18, color: COLORS.ink, ...FONTS.bold },
+  heroStatLabel: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 3 },
   streakCard: { backgroundColor: UI.card.warm.backgroundColor, borderRadius: UI.radius.lg, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: UI.card.warm.borderColor },
   streakLeft: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   streakFire: { fontSize: 36 },
@@ -414,9 +510,7 @@ const styles = StyleSheet.create({
   questXP: { fontSize: 13, color: COLORS.accent, ...FONTS.bold },
   questCheck: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   questCheckText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
-  quickActions: { flexDirection: 'row', gap: 12 },
-  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: UI.radius.md, gap: 8, ...SHADOWS.medium },
-  quickActionText: { fontSize: 15, color: COLORS.white, ...FONTS.bold },
+  sectionLink: { fontSize: 12, color: COLORS.blueDark, ...FONTS.semiBold, marginBottom: 12 },
   battlePassCard: { backgroundColor: '#12273A', borderRadius: UI.radius.lg, padding: 18, ...SHADOWS.medium },
   battlePassHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   battlePassTitle: { fontSize: 18, color: COLORS.white, ...FONTS.bold },
@@ -433,4 +527,69 @@ const styles = StyleSheet.create({
   chestSubtitle: { fontSize: 12, color: COLORS.inkSoft, marginTop: 4, lineHeight: 18 },
   chestButton: { backgroundColor: COLORS.accentDark, borderRadius: UI.radius.md, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: '#A86200' },
   chestButtonText: { fontSize: 12, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.8 },
+  placementCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.accentSoft,
+    borderRadius: UI.radius.md,
+    borderWidth: 1,
+    borderColor: '#F4D6A2',
+    padding: 12,
+  },
+  placementIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFE2B6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placementInfo: { flex: 1 },
+  placementTitle: { fontSize: 13, color: COLORS.ink, ...FONTS.bold },
+  placementText: { fontSize: 11, color: COLORS.inkSoft, marginTop: 2, lineHeight: 15 },
+  placementCta: {
+    backgroundColor: COLORS.accentDark,
+    borderRadius: UI.radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderBottomWidth: 3,
+    borderBottomColor: '#A86200',
+  },
+  placementCtaText: { fontSize: 11, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.5 },
+  extraGamesRail: { paddingRight: 8 },
+  extraGameCard: {
+    width: 220,
+    marginRight: 12,
+    backgroundColor: COLORS.bgPanel,
+    borderRadius: UI.radius.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.mintLine,
+    ...SHADOWS.medium,
+  },
+  extraGameIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.bgPanelAlt,
+    borderWidth: 1,
+    borderColor: COLORS.skyLine,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  extraGameTitle: { marginTop: 12, fontSize: 16, color: COLORS.ink, ...FONTS.bold },
+  extraGameSubtitle: { marginTop: 6, fontSize: 12, lineHeight: 17, color: COLORS.inkSoft, ...FONTS.regular },
+  extraGameMetaRow: { marginTop: 12, flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  extraGameMeta: {
+    fontSize: 11,
+    color: COLORS.blueDark,
+    ...FONTS.semiBold,
+    backgroundColor: COLORS.bgPanelAlt,
+    borderRadius: UI.radius.pill,
+    borderWidth: 1,
+    borderColor: COLORS.skyLine,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
 });

@@ -138,10 +138,6 @@ const LearnScreen: React.FC = () => {
     () => getLearnModeCards(activeMode, placementTier),
     [activeMode, placementTier]
   );
-  const standardPracticeCards = useMemo(
-    () => getLearnModeCards('standard', placementTier).filter((card) => card.id !== 'standard_path'),
-    [placementTier]
-  );
 
   const targetOption = LEARN_LANGUAGE_OPTIONS.find((opt) => opt.code === targetLanguage);
   const localizedTierLabel =
@@ -276,7 +272,7 @@ const LearnScreen: React.FC = () => {
         <Text style={styles.targetHint} numberOfLines={1}>
           {placementCompleted
             ? `${tx('Seviyen olculdu')}: ${selectedCefr}`
-            : tx('Sinavla seviye otomatik ayarlanir.')}
+            : tx('Sinavla rota otomatik ayarlanir.')}
         </Text>
       </View>
 
@@ -319,42 +315,8 @@ const LearnScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {!placementCompleted && (
-          <View style={styles.placementBanner}>
-            <View style={styles.placementIconWrap}>
-              <AppSymbol symbol="🎯" size={22} color={COLORS.accentDark} />
-            </View>
-            <View style={styles.placementCopy}>
-              <Text style={styles.placementTitle}>{tx('Seviye belirleme sinavi hazir')}</Text>
-              <Text style={styles.placementText}>{tx('Sinavi bitirince uniteler ve sorular seviyene gore sertlesecek.')}</Text>
-            </View>
-            <TouchableOpacity style={styles.placementButton} onPress={handlePlacementStart}>
-              <Text style={styles.placementButtonText}>{tx('BASLAT')}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {activeMode === 'standard' ? (
           <>
-            <View style={styles.practiceSection}>
-              <View style={styles.practiceHeader}>
-                <Text style={styles.practiceTitle}>{tx('Ekstra Oyunlar')}</Text>
-                <Text style={styles.practiceSubtitle}>{tx('Path disinda hizli pratik ac')}</Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.practiceRail}>
-                {standardPracticeCards.map((card) => (
-                  <TouchableOpacity key={card.id} style={styles.practiceCard} onPress={() => handleChallengePress(card)} activeOpacity={0.9}>
-                    <View style={styles.practiceIconWrap}>
-                      <AppSymbol symbol={card.icon} size={22} color={COLORS.blueDark} />
-                    </View>
-                    <Text style={styles.practiceCardTitle}>{card.title}</Text>
-                    <Text style={styles.practiceCardSubtitle}>{card.subtitle}</Text>
-                    <Text style={styles.practiceCardMeta}>XP x{card.xpBoost.toFixed(1)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
             {(() => {
               let carryStartX = CENTER;
 
@@ -544,9 +506,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 4,
     marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: UI.radius.lg,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: UI.radius.md,
     backgroundColor: COLORS.bgPanel,
     borderWidth: 1,
     borderColor: COLORS.skyLine,
@@ -554,18 +516,18 @@ const styles = StyleSheet.create({
   },
   targetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   targetInfo: { flex: 1, minWidth: 0 },
-  targetMeta: { alignItems: 'flex-end', gap: 6 },
-  targetEyebrow: { fontSize: 10, color: COLORS.inkSoft, ...FONTS.medium, textTransform: 'uppercase', letterSpacing: 0.7 },
-  targetTitle: { fontSize: 16, color: COLORS.ink, ...FONTS.bold, marginTop: 1 },
+  targetMeta: { alignItems: 'flex-end', gap: 4 },
+  targetEyebrow: { fontSize: 9, color: COLORS.inkSoft, ...FONTS.medium, textTransform: 'uppercase', letterSpacing: 0.6 },
+  targetTitle: { fontSize: 15, color: COLORS.ink, ...FONTS.bold, marginTop: 1 },
   tierPill: {
     backgroundColor: COLORS.primarySoft,
     borderRadius: UI.radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderWidth: 1,
     borderColor: COLORS.mintLine,
   },
-  targetTier: { fontSize: 10, color: COLORS.primaryDark, ...FONTS.semiBold },
+  targetTier: { fontSize: 9, color: COLORS.primaryDark, ...FONTS.semiBold },
   targetChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -574,12 +536,12 @@ const styles = StyleSheet.create({
     borderRadius: UI.radius.pill,
     borderWidth: 1,
     borderColor: COLORS.skyLine,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
-  targetChipFlag: { fontSize: 14 },
-  targetChipText: { fontSize: 11, color: COLORS.blueDark, ...FONTS.semiBold },
-  targetHint: { marginTop: 6, fontSize: 11, color: COLORS.inkSoft, ...FONTS.regular },
+  targetChipFlag: { fontSize: 13 },
+  targetChipText: { fontSize: 10, color: COLORS.blueDark, ...FONTS.semiBold },
+  targetHint: { marginTop: 5, fontSize: 10, color: COLORS.inkSoft, ...FONTS.regular },
   cefrRail: {
     flexDirection: 'row',
     marginHorizontal: 16,
@@ -631,77 +593,6 @@ const styles = StyleSheet.create({
   modeChipTextActive: { color: COLORS.white },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
-  placementBanner: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: UI.radius.md,
-    backgroundColor: COLORS.accentSoft,
-    borderWidth: 1,
-    borderColor: '#F4D6A2',
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  placementIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFE2B6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placementCopy: { flex: 1 },
-  placementTitle: { fontSize: 15, color: COLORS.ink, ...FONTS.bold },
-  placementText: { fontSize: 12, color: COLORS.inkSoft, marginTop: 4, lineHeight: 17 },
-  placementButton: {
-    backgroundColor: COLORS.accentDark,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: UI.radius.md,
-    borderBottomWidth: 3,
-    borderBottomColor: '#A86200',
-  },
-  placementButtonText: { fontSize: 12, color: COLORS.white, ...FONTS.bold, letterSpacing: 0.8 },
-  practiceSection: { marginBottom: 14 },
-  practiceHeader: { paddingHorizontal: 16, marginBottom: 10 },
-  practiceTitle: { fontSize: 17, color: COLORS.ink, ...FONTS.bold },
-  practiceSubtitle: { fontSize: 12, color: COLORS.inkSoft, marginTop: 3 },
-  practiceRail: { paddingHorizontal: 16, gap: 12, paddingRight: 24 },
-  practiceCard: {
-    width: 200,
-    backgroundColor: COLORS.bgPanel,
-    borderRadius: UI.radius.lg,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.mintLine,
-    ...SHADOWS.small,
-  },
-  practiceIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.bgPanelAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.skyLine,
-  },
-  practiceCardTitle: { fontSize: 16, color: COLORS.ink, ...FONTS.bold, marginTop: 12 },
-  practiceCardSubtitle: { fontSize: 12, color: COLORS.inkSoft, marginTop: 6, lineHeight: 18, minHeight: 34 },
-  practiceCardMeta: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-    fontSize: 11,
-    color: COLORS.blueDark,
-    ...FONTS.bold,
-    backgroundColor: COLORS.bgPanelAlt,
-    borderWidth: 1,
-    borderColor: COLORS.skyLine,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: UI.radius.pill,
-  },
   challengeGrid: { paddingHorizontal: 16, gap: 12 },
   challengeCard: {
     backgroundColor: COLORS.bgPanel,
