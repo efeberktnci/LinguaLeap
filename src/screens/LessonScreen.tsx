@@ -259,7 +259,7 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
         }
 
         if (session?.saveProgress !== false) {
-          await lesson.finishLesson(route.params.lesson.id);
+          await lesson.finishLesson(route.params.lesson.id, session?.targetLanguage as any);
         }
 
         if (session?.multiplierEligible && session.timeLimitSec) {
@@ -634,11 +634,6 @@ const LessonScreen: React.FC<Props> = ({ route, navigation }) => {
                 <Ionicons name={isRecognizing ? 'mic' : 'mic-outline'} size={24} color={COLORS.white} />
                 <Text style={styles.micButtonText}>{isRecognizing ? 'Konuşuyorsun...' : 'Basılı Tut'}</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={styles.listenAgainButton} onPress={handleSpeak}>
-                <Ionicons name="volume-medium" size={20} color={COLORS.blueDark} />
-                <Text style={styles.listenAgainText}>Önce dinle</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={styles.pronounceWaveWrap}>
@@ -756,8 +751,8 @@ export default LessonScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgCanvas },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 8 : 16, paddingBottom: 14, gap: 12, backgroundColor: COLORS.bgCanvas },
-  closeButton: { padding: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 18 : 16, paddingBottom: 14, gap: 12, backgroundColor: COLORS.bgCanvas },
+  closeButton: { padding: 10, marginLeft: -2 },
   progressBarContainer: { flex: 1 },
   heartsContainer: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF1F1', paddingHorizontal: 10, paddingVertical: 7, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: '#FFD7D7' },
   timerBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.accentSoft, paddingHorizontal: 10, paddingVertical: 7, borderRadius: UI.radius.pill, borderWidth: 1, borderColor: '#F5D19C' },
@@ -797,8 +792,6 @@ const styles = StyleSheet.create({
   micButtonActive: { backgroundColor: COLORS.red },
   micButtonDisabled: { backgroundColor: COLORS.hare },
   micButtonText: { color: COLORS.white, fontSize: 14, ...FONTS.bold },
-  listenAgainButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.skyLine },
-  listenAgainText: { color: COLORS.blueDark, fontSize: 13, ...FONTS.semiBold },
   promptText: { fontSize: 20, color: COLORS.ink, ...FONTS.semiBold },
   optionsContainer: { gap: 10 },
   option: { borderWidth: 1, borderColor: COLORS.mintLine, borderRadius: UI.radius.md, padding: 14, backgroundColor: COLORS.bgPanel, borderBottomWidth: 4, borderBottomColor: COLORS.mintLine },

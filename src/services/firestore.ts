@@ -60,6 +60,12 @@ const DEFAULT_LEARN_PREFERENCES: LearnPreferences = {
   placementPromptSeen: false,
   cefrLevel: 'A0',
   unlockedCefrLevels: ['A0'],
+  languageLessonProgress: {
+    en: [],
+    de: [],
+    es: [],
+    tr: [],
+  },
 };
 
 const getBattlePassLevel = (xp: number) => Math.max(1, Math.floor(xp / 120) + 1);
@@ -122,6 +128,10 @@ const ensureProfileDefaults = (profile: UserProfile): UserProfile => ({
     ...(profile.learnPreferences ?? {}),
     recentQuestionIds: profile.learnPreferences?.recentQuestionIds ?? [],
     sessionSeeds: profile.learnPreferences?.sessionSeeds ?? {},
+    languageLessonProgress: {
+      ...DEFAULT_LEARN_PREFERENCES.languageLessonProgress,
+      ...(profile.learnPreferences?.languageLessonProgress ?? {}),
+    },
   },
   mistakeBuckets: profile.mistakeBuckets ?? {},
 });
@@ -161,7 +171,7 @@ export async function createUserProfile(uid: string, email: string, name: string
     league: 'Bronze',
     leagueRank: 0,
     createdAt: nowStr,
-    coursesActive: ['en_tr'],
+    coursesActive: ['en', 'de', 'es', 'tr'],
     achievements: DEFAULT_ACHIEVEMENTS,
     weeklyXP: [...EMPTY_WEEK],
     dailyGoal: 250,
@@ -316,6 +326,7 @@ export async function completeLesson(
   totalQuestions: number,
   perfect: boolean,
   questionIds: string[],
+  targetLanguage: 'en' | 'de' | 'es' | 'tr' | undefined,
   token: string,
 ): Promise<void> {
   const rawProfile = await getUserProfile(uid, token);
@@ -327,23 +338,41 @@ export async function completeLesson(
     : [...(profile.completedLessons || []), lessonId];
 
   const accuracy = score / totalQuestions;
-  const crownsEarned = accuracy >= 1 ? 3 : accuracy >= 0.8 ? 2 : 1;
-  const existing = (profile.lessonProgress || {})[lessonId];
+  const progressKey = targetLanguage ? `${targetLanguage}:${lessonId}` : lessonId;
+  const crownsEarned =
+    accuracy >= 1 ? 3 :
+    accuracy >= 0.9 ? 2.5 :
+    accuracy >= 0.8 ? 2 :
+    accuracy >= 0.7 ? 1.5 :
+    accuracy >= 0.6 ? 1 :
+    0.5;
+  const existing = (profile.lessonProgress || {})[progressKey] ?? (profile.lessonProgress || {})[lessonId];
 
   const progress: LessonProgress = {
-    lessonId,
+    lessonId: progressKey,
     crowns: Math.max(existing?.crowns ?? 0, crownsEarned),
     bestScore: Math.max(existing?.bestScore ?? 0, score),
     attempts: (existing?.attempts ?? 0) + 1,
     lastAttempt: new Date().toISOString(),
   };
 
-  const newLessonProgress = { ...(profile.lessonProgress || {}), [lessonId]: progress };
+  const newLessonProgress = { ...(profile.lessonProgress || {}), [progressKey]: progress };
   const totalCrowns = Object.values(newLessonProgress).reduce((sum: number, p: any) => sum + (p.crowns || 0), 0);
   const recentQuestionIds = [
     ...questionIds,
     ...(profile.learnPreferences?.recentQuestionIds ?? []),
   ].filter((value, index, arr) => arr.indexOf(value) === index).slice(0, 60);
+  const languageLessonProgress = {
+    ...DEFAULT_LEARN_PREFERENCES.languageLessonProgress,
+    ...(profile.learnPreferences?.languageLessonProgress ?? {}),
+  };
+
+  if (targetLanguage) {
+    languageLessonProgress[targetLanguage] = [
+      ...(languageLessonProgress[targetLanguage] ?? []).filter((value) => value !== lessonId),
+      lessonId,
+    ];
+  }
 
   await setDocument(USERS, uid, {
     ...profile,
@@ -353,6 +382,7 @@ export async function completeLesson(
     learnPreferences: {
       ...(profile.learnPreferences ?? DEFAULT_LEARN_PREFERENCES),
       recentQuestionIds,
+      languageLessonProgress,
     },
   }, token);
 }
@@ -471,8 +501,8 @@ export async function setLearnTargetLanguage(
 
 export async function setLearnLevel(
   uid: string,
-  cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2',
-  unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2')[],
+  cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
+  unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2')[],
   placementPromptSeen: boolean,
   token: string,
 ): Promise<UserProfile | null> {

@@ -33,8 +33,8 @@ export default UnitHeader;
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 10,
     borderRadius: UI.radius.lg,
     overflow: 'hidden',
     padding: 20,

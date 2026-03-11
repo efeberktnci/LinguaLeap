@@ -78,7 +78,7 @@ const DIFFICULTY_META: Record<AssessmentTier, DifficultyMeta> = {
   },
 };
 
-export const CEFR_LEVELS: CefrLevel[] = ['A0', 'A1', 'A2', 'B1', 'B2'];
+export const CEFR_LEVELS: CefrLevel[] = ['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 const CEFR_TO_TIER: Record<CefrLevel, AssessmentTier> = {
   A0: 'starter',
@@ -86,6 +86,8 @@ const CEFR_TO_TIER: Record<CefrLevel, AssessmentTier> = {
   A2: 'explorer',
   B1: 'navigator',
   B2: 'master',
+  C1: 'master',
+  C2: 'master',
 };
 
 export const LEARN_LANGUAGE_OPTIONS: LearnLanguageOption[] = [
@@ -202,52 +204,165 @@ const PHRASES: Record<string, Record<LearnTargetLanguage, string>> = {
   please: { tr: 'Lütfen', en: 'Please', de: 'Bitte', es: 'Por favor' },
   thanks: { tr: 'Teşekkür ederim', en: 'Thank you', de: 'Danke', es: 'Gracias' },
   sorry: { tr: 'Üzgünüm', en: 'Sorry', de: 'Entschuldigung', es: 'Lo siento' },
+  good_morning: { tr: 'Günaydın', en: 'Good morning', de: 'Guten Morgen', es: 'Buenos días' },
+  good_evening: { tr: 'İyi akşamlar', en: 'Good evening', de: 'Guten Abend', es: 'Buenas noches' },
+  nice_meet: { tr: 'Tanıştığımıza memnun oldum', en: 'Nice to meet you', de: 'Freut mich', es: 'Mucho gusto' },
+  how_are_you: { tr: 'Nasılsın', en: 'How are you', de: 'Wie geht es dir', es: 'Cómo estás' },
   water: { tr: 'Su', en: 'Water', de: 'Wasser', es: 'Agua' },
   bread: { tr: 'Ekmek', en: 'Bread', de: 'Brot', es: 'Pan' },
   apple: { tr: 'Elma', en: 'Apple', de: 'Apfel', es: 'Manzana' },
   coffee: { tr: 'Kahve', en: 'Coffee', de: 'Kaffee', es: 'Café' },
   tea: { tr: 'Çay', en: 'Tea', de: 'Tee', es: 'Té' },
   menu: { tr: 'Menü', en: 'Menu', de: 'Speisekarte', es: 'Menú' },
+  milk: { tr: 'Süt', en: 'Milk', de: 'Milch', es: 'Leche' },
+  soup: { tr: 'Çorba', en: 'Soup', de: 'Suppe', es: 'Sopa' },
+  orange_juice: { tr: 'Portakal suyu', en: 'Orange juice', de: 'Orangensaft', es: 'Jugo de naranja' },
+  bill: { tr: 'Hesap', en: 'Bill', de: 'Rechnung', es: 'Cuenta' },
   mother: { tr: 'Anne', en: 'Mother', de: 'Mutter', es: 'Madre' },
   father: { tr: 'Baba', en: 'Father', de: 'Vater', es: 'Padre' },
   friend: { tr: 'Arkadaş', en: 'Friend', de: 'Freund', es: 'Amigo' },
   happy: { tr: 'Mutlu', en: 'Happy', de: 'Glücklich', es: 'Feliz' },
   family: { tr: 'Aile', en: 'Family', de: 'Familie', es: 'Familia' },
   child: { tr: 'Çocuk', en: 'Child', de: 'Kind', es: 'Niño' },
+  sister: { tr: 'Kız kardeş', en: 'Sister', de: 'Schwester', es: 'Hermana' },
+  brother: { tr: 'Erkek kardeş', en: 'Brother', de: 'Bruder', es: 'Hermano' },
+  married: { tr: 'Evli', en: 'Married', de: 'Verheiratet', es: 'Casado' },
+  neighbor: { tr: 'Komşu', en: 'Neighbor', de: 'Nachbar', es: 'Vecino' },
   station: { tr: 'İstasyon', en: 'Station', de: 'Bahnhof', es: 'Estación' },
   hotel: { tr: 'Otel', en: 'Hotel', de: 'Hotel', es: 'Hotel' },
   right: { tr: 'Sağa', en: 'Right', de: 'Rechts', es: 'Derecha' },
   ticket: { tr: 'Bilet', en: 'Ticket', de: 'Ticket', es: 'Boleto' },
   airport: { tr: 'Havalimanı', en: 'Airport', de: 'Flughafen', es: 'Aeropuerto' },
   bus: { tr: 'Otobüs', en: 'Bus', de: 'Bus', es: 'Autobús' },
+  left: { tr: 'Sola', en: 'Left', de: 'Links', es: 'Izquierda' },
+  subway: { tr: 'Metro', en: 'Subway', de: 'U-Bahn', es: 'Metro' },
+  passport: { tr: 'Pasaport', en: 'Passport', de: 'Reisepass', es: 'Pasaporte' },
+  luggage: { tr: 'Bavul', en: 'Luggage', de: 'Gepäck', es: 'Equipaje' },
   red: { tr: 'Kırmızı', en: 'Red', de: 'Rot', es: 'Rojo' },
   shirt: { tr: 'Gömlek', en: 'Shirt', de: 'Hemd', es: 'Camisa' },
   cheap: { tr: 'Ucuz', en: 'Cheap', de: 'Günstig', es: 'Barato' },
   price: { tr: 'Fiyat', en: 'Price', de: 'Preis', es: 'Precio' },
   shoes: { tr: 'Ayakkabı', en: 'Shoes', de: 'Schuhe', es: 'Zapatos' },
   market: { tr: 'Pazar', en: 'Market', de: 'Markt', es: 'Mercado' },
+  expensive: { tr: 'Pahalı', en: 'Expensive', de: 'Teuer', es: 'Caro' },
+  size: { tr: 'Beden', en: 'Size', de: 'Größe', es: 'Talla' },
+  discount: { tr: 'İndirim', en: 'Discount', de: 'Rabatt', es: 'Descuento' },
+  cash: { tr: 'Nakit', en: 'Cash', de: 'Bargeld', es: 'Efectivo' },
   morning: { tr: 'Sabah', en: 'Morning', de: 'Morgen', es: 'Mañana' },
   evening: { tr: 'Akşam', en: 'Evening', de: 'Abend', es: 'Noche' },
   breakfast: { tr: 'Kahvaltı', en: 'Breakfast', de: 'Frühstück', es: 'Desayuno' },
   work: { tr: 'Çalışmak', en: 'Work', de: 'Arbeiten', es: 'Trabajar' },
   study: { tr: 'Ders çalışmak', en: 'Study', de: 'Lernen', es: 'Estudiar' },
   sleep: { tr: 'Uyumak', en: 'Sleep', de: 'Schlafen', es: 'Dormir' },
+  lunch: { tr: 'Öğle yemeği', en: 'Lunch', de: 'Mittagessen', es: 'Almuerzo' },
+  dinner: { tr: 'Akşam yemeği', en: 'Dinner', de: 'Abendessen', es: 'Cena' },
+  exercise: { tr: 'Egzersiz', en: 'Exercise', de: 'Training', es: 'Ejercicio' },
+  shower: { tr: 'Duş', en: 'Shower', de: 'Dusche', es: 'Ducha' },
   meeting: { tr: 'Toplantı', en: 'Meeting', de: 'Besprechung', es: 'Reunión' },
   office: { tr: 'Ofis', en: 'Office', de: 'Büro', es: 'Oficina' },
   teacher: { tr: 'Öğretmen', en: 'Teacher', de: 'Lehrer', es: 'Profesor' },
   student: { tr: 'Öğrenci', en: 'Student', de: 'Schüler', es: 'Estudiante' },
   project: { tr: 'Proje', en: 'Project', de: 'Projekt', es: 'Proyecto' },
   exam: { tr: 'Sınav', en: 'Exam', de: 'Prüfung', es: 'Examen' },
+  manager: { tr: 'Yönetici', en: 'Manager', de: 'Manager', es: 'Gerente' },
+  report: { tr: 'Rapor', en: 'Report', de: 'Bericht', es: 'Informe' },
+  intern: { tr: 'Stajyer', en: 'Intern', de: 'Praktikant', es: 'Practicante' },
+  presentation: { tr: 'Sunum', en: 'Presentation', de: 'Präsentation', es: 'Presentación' },
+  schedule: { tr: 'Program', en: 'Schedule', de: 'Zeitplan', es: 'Horario' },
+  deadline: { tr: 'Son teslim tarihi', en: 'Deadline', de: 'Frist', es: 'Fecha limite' },
+  research: { tr: 'Araştırma', en: 'Research', de: 'Forschung', es: 'Investigacion' },
+  negotiate: { tr: 'Muzakere etmek', en: 'Negotiate', de: 'Verhandeln', es: 'Negociar' },
+  policy: { tr: 'Politika', en: 'Policy', de: 'Richtlinie', es: 'Politica' },
+  strategy: { tr: 'Strateji', en: 'Strategy', de: 'Strategie', es: 'Estrategia' },
+  improve: { tr: 'Gelistirmek', en: 'Improve', de: 'Verbessern', es: 'Mejorar' },
+  solution: { tr: 'Cozum', en: 'Solution', de: 'Losung', es: 'Solucion' },
+  confident: { tr: 'Kendinden emin', en: 'Confident', de: 'Selbstsicher', es: 'Seguro' },
+  discussion: { tr: 'Tartisma', en: 'Discussion', de: 'Diskussion', es: 'Discusion' },
+  analysis: { tr: 'Analiz', en: 'Analysis', de: 'Analyse', es: 'Analisis' },
+  outcome: { tr: 'Sonuç', en: 'Outcome', de: 'Ergebnis', es: 'Resultado' },
+  customer: { tr: 'Müşteri', en: 'Customer', de: 'Kunde', es: 'Cliente' },
+  contract: { tr: 'Sözleşme', en: 'Contract', de: 'Vertrag', es: 'Contrato' },
+  colleague: { tr: 'İş arkadaşı', en: 'Colleague', de: 'Kollege', es: 'Colega' },
+  feedback: { tr: 'Geri bildirim', en: 'Feedback', de: 'Feedback', es: 'Retroalimentacion' },
+  budget: { tr: 'Bütçe', en: 'Budget', de: 'Budget', es: 'Presupuesto' },
+  proposal: { tr: 'Teklif', en: 'Proposal', de: 'Vorschlag', es: 'Propuesta' },
+  appointment: { tr: 'Randevu', en: 'Appointment', de: 'Termin', es: 'Cita' },
+  reservation: { tr: 'Rezervasyon', en: 'Reservation', de: 'Reservierung', es: 'Reserva' },
+  quarter: { tr: 'Çeyrek', en: 'Quarter', de: 'Quartal', es: 'Trimestre' },
+  client: { tr: 'Danışan', en: 'Client', de: 'Kunde', es: 'Cliente' },
 };
 
 const UNIT_VOCAB: Record<number, string[]> = {
-  1: ['hello', 'bye', 'my_name', 'please', 'thanks', 'sorry'],
-  2: ['water', 'bread', 'apple', 'coffee', 'tea', 'menu'],
-  3: ['mother', 'father', 'friend', 'happy', 'family', 'child'],
-  4: ['station', 'hotel', 'right', 'ticket', 'airport', 'bus'],
-  5: ['red', 'shirt', 'cheap', 'price', 'shoes', 'market'],
-  6: ['morning', 'evening', 'breakfast', 'work', 'study', 'sleep'],
-  7: ['meeting', 'office', 'teacher', 'student', 'project', 'exam'],
+  1: ['hello', 'bye', 'my_name', 'please', 'thanks', 'sorry', 'good_morning', 'good_evening', 'nice_meet', 'how_are_you'],
+  2: ['water', 'bread', 'apple', 'coffee', 'tea', 'menu', 'milk', 'soup', 'orange_juice', 'bill'],
+  3: ['mother', 'father', 'friend', 'happy', 'family', 'child', 'sister', 'brother', 'married', 'neighbor'],
+  4: ['station', 'hotel', 'right', 'ticket', 'airport', 'bus', 'left', 'subway', 'passport', 'luggage', 'reservation', 'appointment'],
+  5: ['red', 'shirt', 'cheap', 'price', 'shoes', 'market', 'expensive', 'size', 'discount', 'cash'],
+  6: ['morning', 'evening', 'breakfast', 'work', 'study', 'sleep', 'lunch', 'dinner', 'exercise', 'shower'],
+  7: ['meeting', 'office', 'teacher', 'student', 'project', 'exam', 'manager', 'report', 'intern', 'presentation', 'colleague', 'feedback'],
+};
+
+const TIER_BONUS_VOCAB: Record<AssessmentTier, string[]> = {
+  starter: ['hello', 'please', 'thanks', 'water', 'bread', 'friend', 'good_morning', 'tea'],
+  explorer: ['family', 'hotel', 'ticket', 'price', 'study', 'teacher', 'discount', 'lunch', 'reservation', 'appointment'],
+  navigator: ['airport', 'meeting', 'project', 'schedule', 'research', 'solution', 'manager', 'presentation', 'feedback', 'colleague'],
+  master: ['deadline', 'negotiate', 'policy', 'strategy', 'confident', 'discussion', 'analysis', 'contract', 'budget', 'proposal', 'quarter', 'client'],
+};
+
+const DISTRACTOR_CLUSTERS: string[][] = [
+  ['hello', 'bye', 'good_morning', 'good_evening', 'nice_meet', 'how_are_you', 'thanks', 'sorry', 'please', 'my_name'],
+  ['water', 'coffee', 'tea', 'milk', 'orange_juice', 'soup', 'bread', 'apple', 'menu', 'bill'],
+  ['mother', 'father', 'sister', 'brother', 'family', 'child', 'friend', 'neighbor', 'married', 'happy'],
+  ['station', 'hotel', 'airport', 'ticket', 'bus', 'subway', 'passport', 'luggage', 'reservation', 'appointment'],
+  ['right', 'left', 'market', 'price', 'cheap', 'expensive', 'discount', 'cash', 'size', 'shoes', 'shirt', 'red'],
+  ['morning', 'evening', 'breakfast', 'lunch', 'dinner', 'exercise', 'shower', 'work', 'study', 'sleep'],
+  ['meeting', 'office', 'teacher', 'student', 'project', 'exam', 'manager', 'report', 'presentation', 'intern', 'colleague', 'feedback'],
+  ['schedule', 'deadline', 'research', 'analysis', 'solution', 'strategy', 'policy', 'proposal', 'budget', 'quarter', 'contract', 'client', 'customer', 'discussion', 'confident', 'improve', 'negotiate', 'outcome'],
+];
+
+const UNIT_CONTEXT_TEMPLATES: Record<number, Record<LearnTargetLanguage, string[]>> = {
+  1: {
+    tr: ['Kapidan girince ilk kelimen genelde "{term}" olur.', 'Yeni biriyle konusmaya "{term}" diyerek baslayabilirsin.', 'Kisa ve dogal bir giris icin "{term}" iyi bir secimdir.'],
+    en: ['When you walk in, "{term}" is often the first thing you say.', 'You can start a new conversation with "{term}".', '"{term}" works well as a short and natural opener.'],
+    de: ['Wenn du hereinkommst, sagst du oft zuerst "{term}".', 'Du kannst ein neues Gesprach mit "{term}" beginnen.', '"{term}" ist ein kurzer und naturlicher Einstieg.'],
+    es: ['Cuando entras, "{term}" suele ser lo primero que dices.', 'Puedes empezar una nueva conversacion con "{term}".', '"{term}" funciona bien como una entrada corta y natural.'],
+  },
+  2: {
+    tr: ['Kafede siparis verirken "{term}" kelimesi isine yarar.', 'Masadaki secenekler arasinda "{term}" da var.', 'Yemek veya icecek isterken "{term}" sik kullanilir.'],
+    en: ['"{term}" is useful when ordering at a cafe.', '"{term}" is one of the options on the table.', 'You hear "{term}" often when asking for food or drinks.'],
+    de: ['"{term}" ist praktisch, wenn du im Cafe bestellst.', '"{term}" gehort zu den Optionen auf dem Tisch.', 'Beim Bestellen von Essen oder Getranken hort man oft "{term}".'],
+    es: ['"{term}" sirve cuando haces un pedido en una cafeteria.', '"{term}" aparece entre las opciones de la mesa.', 'Se usa mucho "{term}" al pedir comida o bebida.'],
+  },
+  3: {
+    tr: ['Evde aileden bahsederken "{term}" dogal durur.', 'Yakın cevreni anlatirken "{term}" kelimesi gerekebilir.', 'Kisisel bir hikayede "{term}" gecmesi normaldir.'],
+    en: ['"{term}" sounds natural when talking about family at home.', 'You may need "{term}" when describing people close to you.', 'It is normal to hear "{term}" in a personal story.'],
+    de: ['"{term}" klingt naturlich, wenn man zu Hause uber Familie spricht.', 'Du brauchst "{term}", wenn du nahe Personen beschreibst.', 'In einer personlichen Geschichte kommt "{term}" oft vor.'],
+    es: ['"{term}" suena natural cuando hablas de la familia en casa.', 'Puede hacer falta "{term}" al describir a personas cercanas.', 'Es normal ver "{term}" en una historia personal.'],
+  },
+  4: {
+    tr: ['Yolculuk sirasinda "{term}" kelimesi cok ise yarar.', 'Havalimaninda veya otelde "{term}" duyabilirsin.', 'Yon sorarken ya da hareket ederken "{term}" kullanilir.'],
+    en: ['"{term}" is very useful while traveling.', 'You may hear "{term}" at the airport or in a hotel.', '"{term}" appears when asking for directions or moving around.'],
+    de: ['"{term}" ist auf Reisen sehr nützlich.', 'Am Flughafen oder im Hotel horst du oft "{term}".', '"{term}" erscheint beim Fragen nach dem Weg oder unterwegs.'],
+    es: ['"{term}" es muy util mientras viajas.', 'Puedes oir "{term}" en el aeropuerto o en un hotel.', '"{term}" aparece al pedir direcciones o al moverte.'],
+  },
+  5: {
+    tr: ['Magazada fiyat bakarken "{term}" aklinda kalir.', 'Alisveris yaparken "{term}" gibi kelimeler fark yaratir.', 'Kasada veya reyonda "{term}" duymak normaldir.'],
+    en: ['"{term}" stands out when you are checking prices in a store.', 'Words like "{term}" make a difference while shopping.', 'It is normal to hear "{term}" at the counter or near the shelves.'],
+    de: ['"{term}" fallt auf, wenn du im Laden Preise vergleichst.', 'Worter wie "{term}" helfen dir beim Einkaufen.', 'An der Kasse oder im Regal horst du oft "{term}".'],
+    es: ['"{term}" destaca cuando revisas precios en una tienda.', 'Palabras como "{term}" ayudan mientras compras.', 'Es normal oir "{term}" en la caja o cerca de los productos.'],
+  },
+  6: {
+    tr: ['Gunluk plan kurarken "{term}" kelimesi sikca cikar.', 'Sabahdan aksama kadar rutinde "{term}" vardir.', '"{term}" gunun normal akisinda gecen bir ifadedir.'],
+    en: ['"{term}" comes up often when planning the day.', 'From morning to evening, "{term}" appears in the routine.', '"{term}" is part of a normal daily flow.'],
+    de: ['"{term}" taucht oft auf, wenn du den Tag planst.', 'Von morgens bis abends gehort "{term}" zur Routine.', '"{term}" ist Teil eines normalen Tagesablaufs.'],
+    es: ['"{term}" aparece mucho cuando organizas el dia.', 'De la manana a la noche, "{term}" entra en la rutina.', '"{term}" forma parte de un ritmo diario normal.'],
+  },
+  7: {
+    tr: ['Ofiste veya okulda "{term}" kelimesi oldukca yaygindir.', 'Profesyonel bir ortamda "{term}" duymak normaldir.', 'Ders ya da is akisi icinde "{term}" onemli olabilir.'],
+    en: ['"{term}" is common in the office or at school.', 'It is normal to hear "{term}" in a professional setting.', '"{term}" can be important in a lesson or work flow.'],
+    de: ['"{term}" ist im Buro oder in der Schule sehr ublich.', 'In einem professionellen Umfeld hort man oft "{term}".', '"{term}" kann im Unterricht oder bei der Arbeit wichtig sein.'],
+    es: ['"{term}" es comun en la oficina o en la escuela.', 'Es normal escuchar "{term}" en un entorno profesional.', '"{term}" puede ser importante en clase o en el trabajo.'],
+  },
 };
 
 const UI_COPY: Record<AppLanguage, {
@@ -297,6 +412,121 @@ const UI_COPY: Record<AppLanguage, {
   },
 };
 
+const QUESTION_PROMPT_VARIANTS = {
+  tr: {
+    translateWord: [
+      (word: string, toName: string) => `"${word}" ifadesini ${toName} diline cevir`,
+      (word: string, toName: string) => `"${word}" kelimesinin ${toName} karsiligini bul`,
+      (word: string, toName: string) => `${toName} dilinde "${word}" nasil soylenir?`,
+    ],
+    chooseCorrect: [
+      (word: string, toName: string) => `"${word}" icin dogru ${toName} karsiligini sec`,
+      (word: string, toName: string) => `"${word}" ifadesine en uygun ${toName} cevabi bul`,
+      (word: string, toName: string) => `"${word}" ile eslesen ${toName} secenegi sec`,
+    ],
+    translateSentence: [
+      (toName: string) => `Cumleyi ${toName} diline cevir`,
+      (toName: string) => `Bu ifadeyi ${toName} dilinde tamamla`,
+      (toName: string) => `Asagidaki cumlenin ${toName} karsiligini bul`,
+    ],
+    fillBlank: ['Boslugu dogru kelimeyle tamamla', 'Eksik kelimeyi sec', 'Cumledeki boslugu doldur'],
+    listenPrompt: [
+      'Hoparlore dokun, dinle ve dogru cevabi sec',
+      'Dinledigini anlayip dogru secenegi bul',
+      'Sesi dinle ve anlamca dogru cevabi sec',
+    ],
+    pronouncePrompt: [
+      (toName: string) => `${toName} kelimeyi dogru telaffuz et`,
+      (toName: string) => `Mikrofona konus ve ${toName} kelimeyi net soyle`,
+      (toName: string) => `${toName} ifadeyi sesli olarak tekrar et`,
+    ],
+  },
+  en: {
+    translateWord: [
+      (word: string, toName: string) => `Translate "${word}" to ${toName}`,
+      (word: string, toName: string) => `Find the ${toName} meaning of "${word}"`,
+      (word: string, toName: string) => `How do you say "${word}" in ${toName}?`,
+    ],
+    chooseCorrect: [
+      (word: string, toName: string) => `Choose the correct ${toName} translation for "${word}"`,
+      (word: string, toName: string) => `Pick the best ${toName} match for "${word}"`,
+      (word: string, toName: string) => `Select the ${toName} option that fits "${word}"`,
+    ],
+    translateSentence: [
+      (toName: string) => `Translate the sentence to ${toName}`,
+      (toName: string) => `Build the ${toName} version of this sentence`,
+      (toName: string) => `Find the correct ${toName} sentence`,
+    ],
+    fillBlank: ['Complete the blank with the correct word', 'Choose the missing word', 'Fill in the missing part'],
+    listenPrompt: [
+      'Tap the speaker, listen, then choose the correct answer',
+      'Listen carefully and choose the matching answer',
+      'Play the audio and select the right meaning',
+    ],
+    pronouncePrompt: [
+      (toName: string) => `Pronounce the ${toName} word into the microphone`,
+      (toName: string) => `Say the ${toName} term clearly into the mic`,
+      (toName: string) => `Repeat the ${toName} word out loud`,
+    ],
+  },
+  de: {
+    translateWord: [
+      (word: string, toName: string) => `Ubersetze "${word}" auf ${toName}`,
+      (word: string, toName: string) => `Finde die ${toName}-Bedeutung von "${word}"`,
+      (word: string, toName: string) => `Wie sagt man "${word}" auf ${toName}?`,
+    ],
+    chooseCorrect: [
+      (word: string, toName: string) => `Wahle die richtige ${toName}-Ubersetzung fur "${word}"`,
+      (word: string, toName: string) => `Finde die beste ${toName}-Antwort fur "${word}"`,
+      (word: string, toName: string) => `Wahle die passende ${toName}-Option fur "${word}"`,
+    ],
+    translateSentence: [
+      (toName: string) => `Ubersetze den Satz auf ${toName}`,
+      (toName: string) => `Bilde die richtige ${toName}-Version des Satzes`,
+      (toName: string) => `Finde den passenden Satz auf ${toName}`,
+    ],
+    fillBlank: ['Erganze die Lucke mit dem richtigen Wort', 'Wahle das fehlende Wort', 'Fulle die Lucke passend aus'],
+    listenPrompt: [
+      'Tippe auf den Lautsprecher, hore zu und wahle die richtige Antwort',
+      'Hore genau hin und entscheide dich fur die passende Antwort',
+      'Spiele den Ton ab und wähle die richtige Bedeutung',
+    ],
+    pronouncePrompt: [
+      (toName: string) => `Sprich das ${toName}-Wort ins Mikrofon`,
+      (toName: string) => `Sage den ${toName}-Begriff deutlich ins Mikrofon`,
+      (toName: string) => `Wiederhole das ${toName}-Wort laut`,
+    ],
+  },
+  es: {
+    translateWord: [
+      (word: string, toName: string) => `Traduce "${word}" a ${toName}`,
+      (word: string, toName: string) => `Busca el significado en ${toName} de "${word}"`,
+      (word: string, toName: string) => `Como se dice "${word}" en ${toName}?`,
+    ],
+    chooseCorrect: [
+      (word: string, toName: string) => `Elige la traduccion correcta en ${toName} para "${word}"`,
+      (word: string, toName: string) => `Selecciona la mejor opcion en ${toName} para "${word}"`,
+      (word: string, toName: string) => `Encuentra la opcion en ${toName} que coincide con "${word}"`,
+    ],
+    translateSentence: [
+      (toName: string) => `Traduce la oracion a ${toName}`,
+      (toName: string) => `Construye la version en ${toName} de esta frase`,
+      (toName: string) => `Encuentra la oracion correcta en ${toName}`,
+    ],
+    fillBlank: ['Completa el espacio con la palabra correcta', 'Elige la palabra que falta', 'Rellena el hueco con la opcion correcta'],
+    listenPrompt: [
+      'Toca el altavoz, escucha y elige la respuesta correcta',
+      'Escucha con atencion y selecciona la respuesta adecuada',
+      'Reproduce el audio y elige el significado correcto',
+    ],
+    pronouncePrompt: [
+      (toName: string) => `Pronuncia la palabra en ${toName} usando el microfono`,
+      (toName: string) => `Di el termino en ${toName} con claridad`,
+      (toName: string) => `Repite en voz alta la palabra en ${toName}`,
+    ],
+  },
+} as const;
+
 type QuestionOptions = {
   tier?: AssessmentTier;
   mode?: LearnMode;
@@ -334,13 +564,79 @@ const parseLessonMeta = (lessonId: string) => {
   };
 };
 
-const buildOptions = (correct: string, candidatePool: string[], seed: string) => {
-  const unique = Array.from(new Set(candidatePool.filter((item) => item && item !== correct)));
-  const distractors = sortBySeed(unique, seed).slice(0, 3);
+const getUnitForKey = (key: string) =>
+  Number(
+    Object.entries(UNIT_VOCAB).find(([, keys]) => keys.includes(key))?.[0] ?? 1
+  );
+
+const getTierUnitWindow = (unitNo: number, tier: AssessmentTier) => {
+  const units = [unitNo];
+  if (tier !== 'starter' && unitNo > 1) units.push(unitNo - 1);
+  if (tier !== 'starter' && unitNo < Object.keys(UNIT_VOCAB).length) units.push(unitNo + 1);
+  if (tier === 'master' && unitNo + 2 <= Object.keys(UNIT_VOCAB).length) units.push(unitNo + 2);
+  return Array.from(new Set(units)).sort((a, b) => a - b);
+};
+
+const getClusterKeysForKey = (key: string) =>
+  DISTRACTOR_CLUSTERS.find((cluster) => cluster.includes(key)) ?? [];
+
+const getPromptVariant = <
+  T extends keyof typeof QUESTION_PROMPT_VARIANTS['tr']
+>(
+  language: AppLanguage,
+  kind: T,
+  seed: string
+) => {
+  const variants = QUESTION_PROMPT_VARIANTS[language]?.[kind] ?? QUESTION_PROMPT_VARIANTS.en[kind];
+  return variants[seeded(seed) % variants.length];
+};
+
+const prioritizeFreshKeys = (keys: string[], recentQuestionIds: string[], seed: string) =>
+  sortBySeed(Array.from(new Set(keys)), `${seed}:freshness`).sort((a, b) => {
+    const aRecent = recentQuestionIds.some((questionId) => questionId.includes(`_${a}_`)) ? 1 : 0;
+    const bRecent = recentQuestionIds.some((questionId) => questionId.includes(`_${b}_`)) ? 1 : 0;
+    return aRecent - bRecent;
+  });
+
+const rankDistractorCloseness = (correct: string, candidate: string) => {
+  const correctWords = correct.trim().split(/\s+/).length;
+  const candidateWords = candidate.trim().split(/\s+/).length;
+  const lengthPenalty = Math.abs(correct.length - candidate.length);
+  const wordPenalty = Math.abs(correctWords - candidateWords) * 8;
+  const firstLetterPenalty =
+    correct.charAt(0).toLocaleLowerCase('tr-TR') === candidate.charAt(0).toLocaleLowerCase('tr-TR') ? 0 : 2;
+  return lengthPenalty + wordPenalty + firstLetterPenalty;
+};
+
+const buildOptions = (correct: string, pools: string[][], seed: string) => {
+  const scored = new Map<string, number>();
+
+  pools.forEach((pool, poolIndex) => {
+    Array.from(new Set(pool.filter((item) => item && item !== correct))).forEach((candidate) => {
+      const weightedScore = rankDistractorCloseness(correct, candidate) + poolIndex * 6;
+      const existing = scored.get(candidate);
+      if (existing === undefined || weightedScore < existing) {
+        scored.set(candidate, weightedScore);
+      }
+    });
+  });
+
+  const ranked = Array.from(scored.entries())
+    .sort((a, b) => a[1] - b[1])
+    .map(([candidate]) => candidate);
+
+  const distractors = sortBySeed(ranked.slice(0, 10), `${seed}:ranked`).slice(0, 3);
   return sortBySeed([correct, ...distractors], `${seed}:options`);
 };
 
-const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string) => {
+const getContextualExample = (key: string, lang: LearnTargetLanguage, term: string, variant: number) => {
+  const unitNo = getUnitForKey(key);
+  const templates = UNIT_CONTEXT_TEMPLATES[unitNo]?.[lang] ?? UNIT_CONTEXT_TEMPLATES[1][lang];
+  const template = templates[variant % templates.length];
+  return template.replace('{term}', term);
+};
+
+const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string, variant = 0) => {
   switch (key) {
     case 'hello':
       return lang === 'tr' ? `Yeni biriyle tanisinca "${term}" dersin.` : lang === 'en' ? `You say "${term}" when you meet someone.` : lang === 'de' ? `Du sagst "${term}", wenn du jemanden triffst.` : `Dices "${term}" cuando conoces a alguien.`;
@@ -354,6 +650,14 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Birisi yardim edince "${term}" dersin.` : lang === 'en' ? `You say "${term}" when someone helps you.` : lang === 'de' ? `Du sagst "${term}", wenn dir jemand hilft.` : `Dices "${term}" cuando alguien te ayuda.`;
     case 'sorry':
       return lang === 'tr' ? `Kucuk bir hata yaptiginda "${term}" dersin.` : lang === 'en' ? `You say "${term}" after a small mistake.` : lang === 'de' ? `Nach einem kleinen Fehler sagst du "${term}".` : `Dices "${term}" despues de un pequeno error.`;
+    case 'good_morning':
+      return lang === 'tr' ? `Sabah ofise girince "${term}" dersin.` : lang === 'en' ? `You say "${term}" when you arrive in the morning.` : lang === 'de' ? `Am Morgen sagst du "${term}", wenn du ankommst.` : `Dices "${term}" al llegar por la manana.`;
+    case 'good_evening':
+      return lang === 'tr' ? `Aksam birini gorunce "${term}" demek dogaldir.` : lang === 'en' ? `It is natural to say "${term}" when you see someone in the evening.` : lang === 'de' ? `Am Abend ist "${term}" eine passende Begrussung.` : `Es natural decir "${term}" al ver a alguien por la noche.`;
+    case 'nice_meet':
+      return lang === 'tr' ? `Yeni biriyle tanisinca "${term}" dersin.` : lang === 'en' ? `You say "${term}" when meeting someone new.` : lang === 'de' ? `Wenn du jemanden neu triffst, sagst du "${term}".` : `Dices "${term}" al conocer a alguien nuevo.`;
+    case 'how_are_you':
+      return lang === 'tr' ? `Samimi bir baslangic icin "${term}" diye sorarsin.` : lang === 'en' ? `For a friendly start, you ask "${term}".` : lang === 'de' ? `Fur einen freundlichen Einstieg fragst du "${term}".` : `Para empezar de forma amable preguntas "${term}".`;
     case 'water':
       return lang === 'tr' ? `Masada bir bardak "${term}" var.` : lang === 'en' ? `There is a glass of "${term}" on the table.` : lang === 'de' ? `Auf dem Tisch steht ein Glas "${term}".` : `Hay un vaso de "${term}" en la mesa.`;
     case 'bread':
@@ -366,6 +670,8 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Aksam olunca sicak "${term}" isterim.` : lang === 'en' ? `In the evening I want hot "${term}".` : lang === 'de' ? `Am Abend mochte ich heissen "${term}".` : `Por la tarde quiero "${term}" caliente.`;
     case 'menu':
       return lang === 'tr' ? `Restoranda once "${term}" isteriz.` : lang === 'en' ? `At the restaurant we ask for the "${term}" first.` : lang === 'de' ? `Im Restaurant fragen wir zuerst nach der "${term}".` : `En el restaurante primero pedimos el "${term}".`;
+    case 'bill':
+      return lang === 'tr' ? `Yemekten sonra "${term}" isteyebilir misin?` : lang === 'en' ? `Can you ask for the "${term}" after the meal?` : lang === 'de' ? `Kannst du nach dem Essen um die "${term}" bitten?` : `Puedes pedir la "${term}" despues de comer?`;
     case 'mother':
       return lang === 'tr' ? `Benim "${term}" cok iyi yemek yapar.` : lang === 'en' ? `My "${term}" cooks very well.` : lang === 'de' ? `Meine "${term}" kocht sehr gut.` : `Mi "${term}" cocina muy bien.`;
     case 'father':
@@ -378,6 +684,10 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Hafta sonu tum "${term}" bir araya gelir.` : lang === 'en' ? `The whole "${term}" gets together on weekends.` : lang === 'de' ? `Am Wochenende kommt die ganze "${term}" zusammen.` : `Toda la "${term}" se reune el fin de semana.`;
     case 'child':
       return lang === 'tr' ? `Parkta kosan bir "${term}" goruyorum.` : lang === 'en' ? `I see a "${term}" running in the park.` : lang === 'de' ? `Ich sehe ein "${term}" im Park laufen.` : `Veo a un "${term}" corriendo en el parque.`;
+    case 'sister':
+      return lang === 'tr' ? `Benim "${term}" universitede okuyor.` : lang === 'en' ? `My "${term}" studies at university.` : lang === 'de' ? `Meine "${term}" studiert an der Universitat.` : `Mi "${term}" estudia en la universidad.`;
+    case 'brother':
+      return lang === 'tr' ? `Kucuk "${term}" futbolu cok seviyor.` : lang === 'en' ? `My younger "${term}" loves football.` : lang === 'de' ? `Mein kleiner "${term}" liebt Fussball.` : `Mi "${term}" menor ama el futbol.`;
     case 'station':
       return lang === 'tr' ? `Tren icin "${term}" gitmemiz gerekiyor.` : lang === 'en' ? `We need to go to the "${term}" for the train.` : lang === 'de' ? `Fur den Zug mussen wir zum "${term}".` : `Necesitamos ir a la "${term}" para el tren.`;
     case 'hotel':
@@ -390,6 +700,10 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Sabah erkenden "${term}" gidecegiz.` : lang === 'en' ? `We will go to the "${term}" early in the morning.` : lang === 'de' ? `Am fruhen Morgen fahren wir zum "${term}".` : `Iremos al "${term}" temprano por la manana.`;
     case 'bus':
       return lang === 'tr' ? `Bu "${term}" merkeze gidiyor.` : lang === 'en' ? `This "${term}" goes to the city center.` : lang === 'de' ? `Dieser "${term}" fahrt ins Zentrum.` : `Este "${term}" va al centro.`;
+    case 'passport':
+      return lang === 'tr' ? `Kontrolde "${term}" hazir tut.` : lang === 'en' ? `Keep your "${term}" ready at the control desk.` : lang === 'de' ? `Halte deinen "${term}" an der Kontrolle bereit.` : `Ten listo tu "${term}" en el control.`;
+    case 'luggage':
+      return lang === 'tr' ? `Benim "${term}" mavi etiketli.` : lang === 'en' ? `My "${term}" has a blue tag.` : lang === 'de' ? `Mein "${term}" hat ein blaues Etikett.` : `Mi "${term}" tiene una etiqueta azul.`;
     case 'red':
       return lang === 'tr' ? `Bugun "${term}" bir ceket giydim.` : lang === 'en' ? `Today I wore a "${term}" jacket.` : lang === 'de' ? `Heute trage ich eine "${term}" Jacke.` : `Hoy llevo una chaqueta "${term}".`;
     case 'shirt':
@@ -402,6 +716,10 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Yeni "${term}" yuruyus icin rahat.` : lang === 'en' ? `The new "${term}" are comfortable for walking.` : lang === 'de' ? `Die neuen "${term}" sind bequem zum Laufen.` : `Los "${term}" nuevos son comodos para caminar.`;
     case 'market':
       return lang === 'tr' ? `Aksamustu "${term}" ugrayacagim.` : lang === 'en' ? `I will stop by the "${term}" this evening.` : lang === 'de' ? `Am Abend gehe ich noch zum "${term}".` : `Pasare por el "${term}" esta tarde.`;
+    case 'discount':
+      return lang === 'tr' ? `Bu hafta bu urunde buyuk bir "${term}" var.` : lang === 'en' ? `There is a big "${term}" on this item this week.` : lang === 'de' ? `Diese Woche gibt es auf diesen Artikel einen grossen "${term}".` : `Esta semana hay un gran "${term}" en este producto.`;
+    case 'size':
+      return lang === 'tr' ? `Bu gomlegin buyuk "${term}" var mi?` : lang === 'en' ? `Do you have this shirt in a larger "${term}"?` : lang === 'de' ? `Gibt es dieses Hemd in einer grosseren "${term}"?` : `Tienes esta camisa en una "${term}" mas grande?`;
     case 'morning':
       return lang === 'tr' ? `Ben genelde erken "${term}" kalkarim.` : lang === 'en' ? `I usually wake up early in the "${term}".` : lang === 'de' ? `Ich stehe normalerweise fruh am "${term} auf.` : `Normalmente me levanto temprano por la "${term}".`;
     case 'evening':
@@ -414,6 +732,10 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Aksam yemeginden sonra "${term}" iyi gidiyor.` : lang === 'en' ? `After dinner, some "${term}" goes well.` : lang === 'de' ? `Nach dem Abendessen tut etwas "${term}" gut.` : `Despues de cenar viene bien un poco de "${term}".`;
     case 'sleep':
       return lang === 'tr' ? `Gece gec olmadan "${term}" istiyorum.` : lang === 'en' ? `Before it gets late, I want to "${term}".` : lang === 'de' ? `Bevor es spat wird, mochte ich "${term}.` : `Antes de que sea tarde, quiero "${term}".`;
+    case 'exercise':
+      return lang === 'tr' ? `Isten sonra biraz "${term}" yaparim.` : lang === 'en' ? `I do some "${term}" after work.` : lang === 'de' ? `Nach der Arbeit mache ich etwas "${term}".` : `Hago algo de "${term}" despues del trabajo.`;
+    case 'shower':
+      return lang === 'tr' ? `Kosudan sonra hemen "${term}" alirim.` : lang === 'en' ? `I take a "${term}" right after running.` : lang === 'de' ? `Nach dem Laufen nehme ich sofort eine "${term}".` : `Me doy una "${term}" justo despues de correr.`;
     case 'meeting':
       return lang === 'tr' ? `On birde bir "${term}" var.` : lang === 'en' ? `There is a "${term}" at eleven.` : lang === 'de' ? `Um elf Uhr ist ein "${term}.` : `Hay una "${term}" a las once.`;
     case 'office':
@@ -426,8 +748,32 @@ const getNaturalExample = (key: string, lang: LearnTargetLanguage, term: string)
       return lang === 'tr' ? `Bu hafta yeni bir "${term}" teslim edecegiz.` : lang === 'en' ? `We will deliver a new "${term}" this week.` : lang === 'de' ? `Diese Woche geben wir ein neues "${term}" ab.` : `Esta semana entregaremos un nuevo "${term}".`;
     case 'exam':
       return lang === 'tr' ? `Yarin zor bir "${term}" bizi bekliyor.` : lang === 'en' ? `A difficult "${term}" is waiting for us tomorrow.` : lang === 'de' ? `Morgen wartet eine schwere "${term}" auf uns.` : `Manana nos espera un "${term}" dificil.`;
+    case 'manager':
+      return lang === 'tr' ? `Yeni "${term}" haftalik hedefleri anlatti.` : lang === 'en' ? `The new "${term}" explained the weekly goals.` : lang === 'de' ? `Der neue "${term}" hat die Wochenziele erklart.` : `El nuevo "${term}" explico los objetivos de la semana.`;
+    case 'report':
+      return lang === 'tr' ? `Aksamdan once bu "${term}" gondermem gerekiyor.` : lang === 'en' ? `I need to send this "${term}" before evening.` : lang === 'de' ? `Ich muss diesen "${term}" vor dem Abend senden.` : `Necesito enviar este "${term}" antes de la tarde.`;
+    case 'presentation':
+      return lang === 'tr' ? `Yarin sabah bir "${term}" yapacagim.` : lang === 'en' ? `Tomorrow morning I will give a "${term}".` : lang === 'de' ? `Morgen fruh halte ich eine "${term}".` : `Manana por la manana hare una "${term}".`;
+    case 'schedule':
+      return lang === 'tr' ? `Bugunun "${term}" biraz yogun.` : lang === 'en' ? `Today's "${term}" is a bit busy.` : lang === 'de' ? `Der heutige "${term}" ist etwas voll.` : `El "${term}" de hoy esta un poco lleno.`;
+    case 'deadline':
+      return lang === 'tr' ? `Bu gorev icin son "${term}" cuma.` : lang === 'en' ? `The final "${term}" for this task is Friday.` : lang === 'de' ? `Die letzte "${term}" fur diese Aufgabe ist Freitag.` : `La "${term}" final para esta tarea es el viernes.`;
+    case 'analysis':
+      return lang === 'tr' ? `Toplantidan once verilerin "${term}" hazir olmali.` : lang === 'en' ? `The data "${term}" should be ready before the meeting.` : lang === 'de' ? `Die "${term}" der Daten sollte vor dem Meeting bereit sein.` : `El "${term}" de los datos debe estar listo antes de la reunion.`;
+    case 'feedback':
+      return lang === 'tr' ? `Sunumdan sonra ekipten "${term}" topluyoruz.` : lang === 'en' ? `We collect "${term}" from the team after the presentation.` : lang === 'de' ? `Nach der Prasentation sammeln wir "${term}" vom Team.` : `Recogemos "${term}" del equipo despues de la presentacion.`;
+    case 'budget':
+      return lang === 'tr' ? `Yeni proje icin ayri bir "${term}" gerekiyor.` : lang === 'en' ? `The new project needs a separate "${term}".` : lang === 'de' ? `Das neue Projekt braucht ein eigenes "${term}".` : `El nuevo proyecto necesita un "${term}" aparte.`;
+    case 'proposal':
+      return lang === 'tr' ? `Toplantida yeni bir "${term}" sunduk.` : lang === 'en' ? `We presented a new "${term}" in the meeting.` : lang === 'de' ? `Im Meeting haben wir ein neues "${term}" vorgestellt.` : `Presentamos una nueva "${term}" en la reunion.`;
+    case 'appointment':
+      return lang === 'tr' ? `Doktorla yarin sabah bir "${term}" var.` : lang === 'en' ? `There is an "${term}" with the doctor tomorrow morning.` : lang === 'de' ? `Morgen fruh gibt es einen "${term}" beim Arzt.` : `Hay una "${term}" con el medico manana por la manana.`;
+    case 'reservation':
+      return lang === 'tr' ? `Aksam yemegi icin bir "${term}" yaptik.` : lang === 'en' ? `We made a "${term}" for dinner.` : lang === 'de' ? `Wir haben eine "${term}" fur das Abendessen gemacht.` : `Hicimos una "${term}" para la cena.`;
+    case 'quarter':
+      return lang === 'tr' ? `Bu "${term}" satislar daha guclu gidiyor.` : lang === 'en' ? `Sales are stronger this "${term}".` : lang === 'de' ? `In diesem "${term}" laufen die Verkaufszahlen besser.` : `Las ventas van mejor en este "${term}".`;
     default:
-      return lang === 'tr' ? `Bugun yeni kelimen "${term}".` : lang === 'en' ? `Today's new word is "${term}".` : lang === 'de' ? `Dein neues Wort heute ist "${term}".` : `Tu palabra nueva de hoy es "${term}".`;
+      return getContextualExample(key, lang, term, variant);
   }
 };
 
@@ -440,7 +786,7 @@ const buildSentence = (key: string, lang: LearnTargetLanguage, difficulty: Asses
     master: { tr: ' Baski altinda bile dogru kal.', en: ' Stay accurate under pressure.', de: ' Bleib auch unter Druck präzise.', es: ' Manten la precision bajo presion.' },
   };
 
-  const sentence = getNaturalExample(key, lang, term);
+  const sentence = getNaturalExample(key, lang, term, variant);
   return `${sentence}${hardTail[difficulty][lang]}`.trim();
 };
 
@@ -496,7 +842,7 @@ const buildScenarioQuestions = (
 const pickLessonKeys = (unitNo: number, lessonNo: number, seed: string) => {
   const pool = UNIT_VOCAB[unitNo] ?? UNIT_VOCAB[1];
   const rotated = sortBySeed(pool, `${seed}:${unitNo}:${lessonNo}`);
-  return rotated.slice(0, Math.min(rotated.length, 5));
+  return rotated.slice(0, Math.min(rotated.length, 7));
 };
 
 const formatModeBadge = (mode: LearnMode) => {
@@ -521,19 +867,28 @@ const buildAdaptiveQuestionPool = (
   const sourceLanguage = getSourceLang(uiLanguage, targetLanguage);
   const targetName = ui.langName[targetLanguage];
   const { unitNo, lessonNo } = parseLessonMeta(lesson.id);
-  const allKeys = Array.from(new Set(Object.values(UNIT_VOCAB).flat()));
+  const allKeys = Object.keys(PHRASES);
+  const desiredKeyCount = tier === 'master' ? 8 : tier === 'navigator' ? 7 : tier === 'explorer' ? 6 : 5;
+  const tierUnits = getTierUnitWindow(unitNo, tier);
+  const tierWindowKeys = Array.from(
+    new Set(tierUnits.flatMap((number) => UNIT_VOCAB[number] ?? []))
+  );
 
-  const lessonKeys = Array.from(new Set([
-    ...weakFocuses.filter((focus) => allKeys.includes(focus)),
+  const lessonKeys = prioritizeFreshKeys([
+    ...weakFocuses.filter((focus) => Object.prototype.hasOwnProperty.call(PHRASES, focus)),
+    ...TIER_BONUS_VOCAB[tier],
     ...pickLessonKeys(unitNo, lessonNo, sessionSeed),
-  ])).slice(0, 5);
-  const unitKeys = Array.from(new Set([...(UNIT_VOCAB[unitNo] ?? []), ...lessonKeys]));
+    ...sortBySeed(tierWindowKeys, `${sessionSeed}:tierWindow`).slice(0, tier === 'master' ? 4 : tier === 'navigator' ? 3 : 2),
+  ], recentQuestionIds, sessionSeed).slice(0, desiredKeyCount);
+  const contextKeys = Array.from(new Set([...(UNIT_VOCAB[unitNo] ?? []), ...tierWindowKeys, ...lessonKeys]));
+  const unitTargetPool = contextKeys.map((key) => PHRASES[key][targetLanguage]);
+  const unitSourcePool = contextKeys.map((key) => PHRASES[key][sourceLanguage]);
   const targetPool = Array.from(new Set([
-    ...unitKeys.map((key) => PHRASES[key][targetLanguage]),
+    ...unitTargetPool,
     ...allKeys.map((key) => PHRASES[key][targetLanguage]),
   ]));
   const sourcePool = Array.from(new Set([
-    ...unitKeys.map((key) => PHRASES[key][sourceLanguage]),
+    ...unitSourcePool,
     ...allKeys.map((key) => PHRASES[key][sourceLanguage]),
   ]));
 
@@ -542,20 +897,34 @@ const buildAdaptiveQuestionPool = (
   lessonKeys.forEach((key, index) => {
     const source = PHRASES[key][sourceLanguage];
     const target = PHRASES[key][targetLanguage];
+    const clusterKeys = getClusterKeysForKey(key);
+    const clusterTargetPool = clusterKeys.map((clusterKey) => PHRASES[clusterKey][targetLanguage]);
+    const clusterSourcePool = clusterKeys.map((clusterKey) => PHRASES[clusterKey][sourceLanguage]);
+    const sentenceOptionKeys = prioritizeFreshKeys([
+      key,
+      ...sortBySeed(clusterKeys.filter((clusterKey) => clusterKey !== key), `${sessionSeed}:${key}:clusterSentence`).slice(0, 3),
+      ...sortBySeed(lessonKeys.filter((lessonKey) => lessonKey !== key), `${sessionSeed}:${key}:lessonSentence`).slice(0, 3),
+    ], recentQuestionIds, `${sessionSeed}:${key}:sentenceOptions`).slice(0, 6);
     const targetSentence = buildSentence(key, targetLanguage, tier, index);
     const sourceSentence = buildSentence(key, sourceLanguage, tier, index);
-    const sentenceOptions = lessonKeys.map((candidateKey, candidateIndex) =>
+    const sentenceOptions = sentenceOptionKeys.map((candidateKey, candidateIndex) =>
       buildSentence(candidateKey, targetLanguage, tier, candidateIndex)
     );
     const baseXP = Math.round(10 * DIFFICULTY_META[tier].xpScale * (mode === 'boss' ? 1.4 : mode === 'timed' ? 1.2 : mode === 'review' ? 1.1 : 1));
+    const translateWordPrompt = getPromptVariant(uiLanguage, 'translateWord', `${sessionSeed}:${key}:translatePrompt`) as (word: string, toName: string) => string;
+    const chooseCorrectPrompt = getPromptVariant(uiLanguage, 'chooseCorrect', `${sessionSeed}:${key}:selectPrompt`) as (word: string, toName: string) => string;
+    const translateSentencePrompt = getPromptVariant(uiLanguage, 'translateSentence', `${sessionSeed}:${key}:sentencePrompt`) as (toName: string) => string;
+    const fillBlankPrompt = getPromptVariant(uiLanguage, 'fillBlank', `${sessionSeed}:${key}:blankPrompt`) as string;
+    const listenPrompt = getPromptVariant(uiLanguage, 'listenPrompt', `${sessionSeed}:${key}:listenPrompt`) as string;
+    const pronouncePrompt = getPromptVariant(uiLanguage, 'pronouncePrompt', `${sessionSeed}:${key}:pronouncePrompt`) as (toName: string) => string;
 
     pool.push(
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_translate`,
         type: 'translate',
-        question: ui.translateWord(source, targetName),
+        question: translateWordPrompt(source, targetName),
         prompt: source,
-        options: buildOptions(target, targetPool, `${sessionSeed}:${key}:translate`),
+        options: buildOptions(target, [clusterTargetPool, unitTargetPool, targetPool], `${sessionSeed}:${key}:translate`),
         correctAnswer: target,
         xp: baseXP,
         focus: key,
@@ -564,9 +933,9 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_select`,
         type: 'select',
-        question: ui.chooseCorrect(source, targetName),
+        question: chooseCorrectPrompt(source, targetName),
         prompt: source,
-        options: buildOptions(target, targetPool, `${sessionSeed}:${key}:select`),
+        options: buildOptions(target, [clusterTargetPool, unitTargetPool, targetPool], `${sessionSeed}:${key}:select`),
         correctAnswer: target,
         xp: baseXP,
         focus: key,
@@ -575,9 +944,9 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_reverse`,
         type: 'select',
-        question: ui.chooseCorrect(target, ui.langName[sourceLanguage]),
+        question: chooseCorrectPrompt(target, ui.langName[sourceLanguage]),
         prompt: target,
-        options: buildOptions(source, sourcePool, `${sessionSeed}:${key}:reverse`),
+        options: buildOptions(source, [clusterSourcePool, unitSourcePool, sourcePool], `${sessionSeed}:${key}:reverse`),
         correctAnswer: source,
         xp: baseXP,
         focus: key,
@@ -586,9 +955,9 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_blank`,
         type: 'fillBlank',
-        question: ui.fillBlank,
+        question: fillBlankPrompt,
         sentence: targetSentence.replace(target, '_____'),
-        options: buildOptions(target, targetPool, `${sessionSeed}:${key}:blank`),
+        options: buildOptions(target, [clusterTargetPool, unitTargetPool, targetPool], `${sessionSeed}:${key}:blank`),
         correctAnswer: target,
         xp: baseXP,
         focus: key,
@@ -597,9 +966,9 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_sentence`,
         type: 'translate',
-        question: ui.translateSentence(targetName),
+        question: translateSentencePrompt(targetName),
         prompt: sourceSentence,
-        options: buildOptions(targetSentence, sentenceOptions, `${sessionSeed}:${key}:sentence`),
+        options: buildOptions(targetSentence, [sentenceOptions, sentenceOptions], `${sessionSeed}:${key}:sentence`),
         correctAnswer: targetSentence,
         xp: baseXP + 2,
         focus: key,
@@ -608,10 +977,10 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_listen`,
         type: 'listen',
-        question: ui.listenPrompt,
+        question: listenPrompt,
         audioText: target,
         audioLanguage: getSpeechLanguageCode(targetLanguage),
-        options: buildOptions(source, sourcePool, `${sessionSeed}:${key}:listen`),
+        options: buildOptions(source, [clusterSourcePool, unitSourcePool, sourcePool], `${sessionSeed}:${key}:listen`),
         correctAnswer: source,
         xp: baseXP,
         focus: key,
@@ -620,11 +989,11 @@ const buildAdaptiveQuestionPool = (
       {
         id: `${lesson.id}_${mode}_${tier}_${key}_pronounce`,
         type: 'pronounce',
-        question: ui.pronouncePrompt(targetName),
+        question: pronouncePrompt(targetName),
         prompt: target,
         audioText: target,
         audioLanguage: getSpeechLanguageCode(targetLanguage),
-        options: buildOptions(target, targetPool, `${sessionSeed}:${key}:pronounce`),
+        options: buildOptions(target, [clusterTargetPool, unitTargetPool, targetPool], `${sessionSeed}:${key}:pronounce`),
         correctAnswer: target,
         xp: baseXP + 4,
         focus: key,
@@ -648,7 +1017,7 @@ export const evaluatePlacementTier = (score: number, total: number): AssessmentT
 };
 
 export const getCefrLevelFromTier = (tier: AssessmentTier): CefrLevel => {
-  if (tier === 'master') return 'B2';
+  if (tier === 'master') return 'C1';
   if (tier === 'navigator') return 'B1';
   if (tier === 'explorer') return 'A2';
   return 'A0';
@@ -665,20 +1034,16 @@ export const getUnitsForTargetLanguage = (
 ): Unit[] => {
   const tier = options.tier ?? 'starter';
   const meta = DIFFICULTY_META[tier];
-  const tierTitlePrefix =
-    tier === 'starter' ? 'Temel' :
-    tier === 'explorer' ? 'Kesif' :
-    tier === 'navigator' ? 'Ileri' : 'Usta';
 
   return UNITS.map((unit, unitIndex) => {
     const unitCopy = UNIT_COPY[displayLanguage][unit.id];
     const gated = unitIndex < meta.unitOffset;
     return {
       ...unit,
-      title: `${tierTitlePrefix} ${unitCopy?.title ?? unit.title}`,
-      description: gated ? `${meta.label}: hizli gecilmis temel rota` : `${unitCopy?.description ?? unit.description} • ${formatModeBadge(options.mode ?? 'standard')}`,
+      title: unitCopy?.title ?? unit.title,
+      description: gated ? meta.description : unitCopy?.description ?? unit.description,
       completed: gated ? true : unit.completed,
-      icon: gated ? '⚡' : unit.icon,
+      icon: unit.icon,
       lessons: unit.lessons.map((lesson, lessonIndex) => {
         const harderReward = Math.round(lesson.xpReward * meta.xpScale);
         const isBossTest = (options.mode ?? 'standard') === 'boss' && lesson.type === 'trophy';

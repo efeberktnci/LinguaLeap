@@ -28,7 +28,7 @@ export const USER_PROFILE: UserProfile = {
   league: 'Obsidian',
   leagueRank: 3,
   createdAt: '2024-09-15T10:00:00.000Z',
-  coursesActive: ['en_tr', 'de_tr'],
+  coursesActive: ['en', 'de', 'es', 'tr'],
   achievements: [
     { id: 'ach_1', icon: '🔥', title: 'Ateş Başlangıcı', unlocked: true },
     { id: 'ach_2', icon: '⚡', title: 'Durdurulamaz', unlocked: true },
@@ -77,6 +77,12 @@ export const USER_PROFILE: UserProfile = {
     placementPromptSeen: true,
     cefrLevel: 'B1',
     unlockedCefrLevels: ['A0', 'A1', 'A2', 'B1'],
+    languageLessonProgress: {
+      en: ['lesson_1_1', 'lesson_1_2', 'lesson_2_1'],
+      de: ['lesson_1_1'],
+      es: [],
+      tr: [],
+    },
   },
   mistakeBuckets: {
     friend: { focus: 'friend', wrong: 4, correct: 1, lastSeen: '2026-03-10T11:00:00.000Z' },
@@ -103,7 +109,7 @@ export const UNITS: Unit[] = [
     description: 'Selamlaşma ve tanışma',
     color: '#58CC02',
     shadowColor: '#46A302',
-    icon: '👋',
+    icon: '🗣️',
     completed: true,
     lessons: [
       { id: 'lesson_1_1', type: 'star', title: 'Selamlar', completed: true, crowns: 3, maxCrowns: 5, xpReward: 10 },
@@ -119,7 +125,7 @@ export const UNITS: Unit[] = [
     description: 'Restoranda sipariş verme',
     color: '#CE82FF',
     shadowColor: '#A855F7',
-    icon: '🍕',
+    icon: '🍽️',
     completed: true,
     lessons: [
       { id: 'lesson_2_1', type: 'star', title: 'Meyveler', completed: true, crowns: 5, maxCrowns: 5, xpReward: 10 },
@@ -135,7 +141,7 @@ export const UNITS: Unit[] = [
     description: 'Aile bireylerini tanıtma',
     color: '#FF9600',
     shadowColor: '#CC7A00',
-    icon: '👨‍👩‍👧‍👦',
+    icon: '🏡',
     completed: false,
     lessons: [
       { id: 'lesson_3_1', type: 'star', title: 'Aile', completed: true, crowns: 1, maxCrowns: 5, xpReward: 10 },
@@ -151,7 +157,7 @@ export const UNITS: Unit[] = [
     description: 'Yön sorma ve ulaşım',
     color: '#1CB0F6',
     shadowColor: '#0A8FD4',
-    icon: '✈️',
+    icon: '🧳',
     completed: false,
     lessons: [
       { id: 'lesson_4_1', type: 'star', title: 'Ulaşım', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
@@ -167,7 +173,7 @@ export const UNITS: Unit[] = [
     description: 'Mağazada iletişim',
     color: '#FF4B4B',
     shadowColor: '#CC3B3B',
-    icon: '🛍️',
+    icon: '🛒',
     completed: false,
     lessons: [
       { id: 'lesson_5_1', type: 'star', title: 'Renkler', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },
@@ -199,7 +205,7 @@ export const UNITS: Unit[] = [
     description: 'Ofis ve okul konuşmaları',
     color: '#00B894',
     shadowColor: '#008C71',
-    icon: '💼',
+    icon: '🎓',
     completed: false,
     lessons: [
       { id: 'lesson_7_1', type: 'star', title: 'Ofis', completed: false, crowns: 0, maxCrowns: 5, xpReward: 10, locked: true },

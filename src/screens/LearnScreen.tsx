@@ -111,7 +111,10 @@ const LearnScreen: React.FC = () => {
         .map((item) => item.focus),
     [user?.mistakeBuckets]
   );
-  const completedLessons = user?.completedLessons ?? [];
+  const completedLessons =
+    (user?.learnPreferences?.languageLessonProgress?.[targetLanguage]?.length
+      ? user.learnPreferences.languageLessonProgress[targetLanguage]
+      : user?.completedLessons) ?? [];
   const autoUnlockedByProgress = useMemo(() => {
     const lessonCount = completedLessons.length;
     const levels: CefrLevel[] = ['A0'];
@@ -119,6 +122,8 @@ const LearnScreen: React.FC = () => {
     if (lessonCount >= 10) levels.push('A2');
     if (lessonCount >= 15) levels.push('B1');
     if (lessonCount >= 20) levels.push('B2');
+    if (lessonCount >= 26) levels.push('C1');
+    if (lessonCount >= 32) levels.push('C2');
     return levels;
   }, [completedLessons.length]);
   const unlockedCefrLevels = useMemo(() => {
@@ -257,41 +262,39 @@ const LearnScreen: React.FC = () => {
         <View style={styles.targetBar}>
           <View style={styles.targetInfo}>
             <Text style={styles.targetEyebrow}>{tx('Ogrenilecek Dili Sec')}</Text>
-            <Text style={styles.targetTitle}>{targetOption?.label ?? 'English'}</Text>
           </View>
           <View style={styles.targetMeta}>
-            <View style={styles.tierPill}>
-              <Text style={styles.targetTier}>{selectedCefr} • {localizedTierLabel}</Text>
-            </View>
             <TouchableOpacity style={styles.targetChip} onPress={() => setPickerVisible(true)}>
               <AppSymbol symbol={targetOption?.flag ?? '\u{1F1EC}\u{1F1E7}'} size={14} color={COLORS.blueDark} style={styles.targetChipFlag} />
-              <Text style={styles.targetChipText}>{tx('Degistir')}</Text>
+              <Text style={styles.targetChipText}>{targetOption?.label ?? 'English'}</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.targetHint} numberOfLines={1}>
-          {placementCompleted
-            ? `${tx('Seviyen olculdu')}: ${selectedCefr}`
-            : tx('Sinavla rota otomatik ayarlanir.')}
-        </Text>
       </View>
 
-      <View style={styles.cefrRail}>
-        {CEFR_LEVELS.map((level) => {
-          const active = selectedCefr === level;
-          const unlocked = unlockedCefrLevels.includes(level);
-          return (
-            <TouchableOpacity
-              key={level}
-              style={[styles.cefrChip, active && styles.cefrChipActive, !unlocked && styles.cefrChipLocked]}
-              onPress={() => handleCefrSelect(level)}
-              disabled={!unlocked}
-            >
-              <Text style={[styles.cefrChipText, active && styles.cefrChipTextActive, !unlocked && styles.cefrChipTextLocked]}>{level}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.cefrScroll}
+        contentContainerStyle={styles.cefrRail}
+      >
+        <View style={styles.cefrRow}>
+          {CEFR_LEVELS.map((level) => {
+            const active = selectedCefr === level;
+            const unlocked = unlockedCefrLevels.includes(level);
+            return (
+              <TouchableOpacity
+                key={level}
+                style={[styles.cefrChip, active && styles.cefrChipActive, !unlocked && styles.cefrChipLocked]}
+                onPress={() => handleCefrSelect(level)}
+                disabled={!unlocked}
+              >
+                <Text style={[styles.cefrChipText, active && styles.cefrChipTextActive, !unlocked && styles.cefrChipTextLocked]}>{level}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
 
       <View style={styles.modeRail}>
         {MODES.map((mode) => {
@@ -338,10 +341,9 @@ const LearnScreen: React.FC = () => {
                   }
 
                   const completed = completedLessons.includes(lesson.id);
-                  const crownsDone = Math.max(0, user?.lessonProgress?.[lesson.id]?.crowns ?? 0);
-                  const maxCrowns = Math.max(lesson.maxCrowns || 1, 1);
-                  const ratio = Math.max(0, Math.min(1, crownsDone / maxCrowns));
-                  const starRating = Math.round(ratio * 6) / 2;
+                  const progressKey = `${targetLanguage}:${lesson.id}`;
+                  const crownsDone = Math.max(0, user?.lessonProgress?.[progressKey]?.crowns ?? user?.lessonProgress?.[lesson.id]?.crowns ?? 0);
+                  const starRating = Math.max(0, Math.min(3, crownsDone));
 
                   return {
                     ...lesson,
@@ -505,54 +507,53 @@ const styles = StyleSheet.create({
   heroShell: {
     marginHorizontal: 16,
     marginTop: 4,
-    marginBottom: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 7,
+    marginBottom: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: UI.radius.md,
     backgroundColor: COLORS.bgPanel,
     borderWidth: 1,
     borderColor: COLORS.skyLine,
     overflow: 'hidden',
   },
-  targetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  targetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   targetInfo: { flex: 1, minWidth: 0 },
-  targetMeta: { alignItems: 'flex-end', gap: 4 },
-  targetEyebrow: { fontSize: 9, color: COLORS.inkSoft, ...FONTS.medium, textTransform: 'uppercase', letterSpacing: 0.6 },
-  targetTitle: { fontSize: 15, color: COLORS.ink, ...FONTS.bold, marginTop: 1 },
-  tierPill: {
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: UI.radius.pill,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: COLORS.mintLine,
-  },
-  targetTier: { fontSize: 9, color: COLORS.primaryDark, ...FONTS.semiBold },
+  targetMeta: { alignItems: 'flex-end' },
+  targetEyebrow: { fontSize: 11, color: COLORS.ink, ...FONTS.bold, textTransform: 'uppercase', letterSpacing: 1.2 },
   targetChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: COLORS.bgPanelAlt,
+    gap: 6,
+    backgroundColor: COLORS.white,
     borderRadius: UI.radius.pill,
     borderWidth: 1,
     borderColor: COLORS.skyLine,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   targetChipFlag: { fontSize: 13 },
-  targetChipText: { fontSize: 10, color: COLORS.blueDark, ...FONTS.semiBold },
-  targetHint: { marginTop: 5, fontSize: 10, color: COLORS.inkSoft, ...FONTS.regular },
+  targetChipText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
+  cefrScroll: {
+    flexGrow: 0,
+    height: 40,
+    maxHeight: 40,
+    marginBottom: 4,
+  },
   cefrRail: {
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  cefrRow: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginBottom: 10,
-    gap: 8,
+    gap: 6,
+    alignItems: 'center',
   },
   cefrChip: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    minWidth: 44,
+    height: 32,
+    paddingHorizontal: 10,
     borderRadius: UI.radius.pill,
     backgroundColor: COLORS.bgPanel,
     borderWidth: 1,
@@ -563,7 +564,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.blueDark,
   },
   cefrChipLocked: {
-    opacity: 0.45,
+    opacity: 0.38,
   },
   cefrChipText: { fontSize: 12, color: COLORS.ink, ...FONTS.bold },
   cefrChipTextActive: { color: COLORS.white },
@@ -571,8 +572,8 @@ const styles = StyleSheet.create({
   modeRail: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginBottom: 10,
-    padding: 4,
+    marginBottom: 4,
+    padding: 3,
     borderRadius: UI.radius.pill,
     backgroundColor: COLORS.bgPanel,
     borderWidth: 1,
@@ -583,7 +584,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderRadius: UI.radius.pill,
   },
   modeChipActive: {

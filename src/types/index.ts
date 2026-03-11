@@ -12,7 +12,8 @@ export interface DailyXP {
 
 export type AssessmentTier = 'starter' | 'explorer' | 'navigator' | 'master';
 export type LearnMode = 'standard' | 'timed' | 'review' | 'boss';
-export type CefrLevel = 'A0' | 'A1' | 'A2' | 'B1' | 'B2';
+export type CefrLevel = 'A0' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+export type LearnTargetLanguage = 'en' | 'de' | 'es' | 'tr';
 
 export interface PlacementState {
   completed: boolean;
@@ -44,12 +45,13 @@ export interface BattlePassState {
 
 export interface LearnPreferences {
   activeMode: LearnMode;
-  learnTargetLanguage: 'en' | 'de' | 'es' | 'tr';
+  learnTargetLanguage: LearnTargetLanguage;
   recentQuestionIds: string[];
   sessionSeeds: Record<string, number>;
   placementPromptSeen: boolean;
   cefrLevel: CefrLevel;
   unlockedCefrLevels: CefrLevel[];
+  languageLessonProgress: Record<LearnTargetLanguage, string[]>;
 }
 
 export interface MistakeBucket {

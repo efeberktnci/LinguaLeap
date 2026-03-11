@@ -94,7 +94,7 @@ export function useUser() {
     return profile;
   }, [authUser?.uid, authUser?.idToken, refreshProfile]);
 
-  const setLearnLevel = useCallback(async (cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2', unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2')[], placementPromptSeen = true) => {
+  const setLearnLevel = useCallback(async (cefrLevel: 'A0' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2', unlockedCefrLevels: ('A0' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2')[], placementPromptSeen = true) => {
     if (!authUser?.uid || !authUser?.idToken) return null;
     const profile = await firestoreService.setLearnLevel(authUser.uid, cefrLevel, unlockedCefrLevels, placementPromptSeen, authUser.idToken);
     await refreshProfile();
@@ -261,7 +261,7 @@ export function useLesson(questions: QuizQuestion[], options: { disableHeartLoss
   }, [user?.uid, user?.idToken, refreshProfile]);
 
   const finishLesson = useCallback(
-    async (lessonId: string) => {
+    async (lessonId: string, targetLanguage?: 'en' | 'de' | 'es' | 'tr') => {
       if (!user?.uid || !user?.idToken) return;
 
       const perfect = state.score === questions.length;
@@ -273,6 +273,7 @@ export function useLesson(questions: QuizQuestion[], options: { disableHeartLoss
         questions.length,
         perfect,
         questions.map((question) => question.id),
+        targetLanguage,
         user.idToken
       );
     },

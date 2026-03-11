@@ -1,79 +1,339 @@
 # LinguaLeap
 
-Dil öğrenme uygulaması. React Native + Expo + TypeScript + Firebase.
+LinguaLeap, oyunlaştırılmış dil öğrenme deneyimini modern mobil ürün diliyle birleştiren bir React Native / Expo uygulaması. Uygulama; gerçek kullanıcı hesabı, seviye sistemi, battle pass, günlük hedefler, lig tablosu, weak words takibi, placement assessment ve telaffuz odaklı ders akışlarıyla birlikte çalışır.
 
-Gerçek kullanıcı kaydı, oturum yönetimi, Firestore veritabanı ve canlı leaderboard ile çalışır.
+Bu repo şu anda yalnızca bir demo arayüz değil. Kullanıcı profili, lesson progress, achievement, streak, battle pass, reward chest, leaderboard ve soru geçmişi gerçek veri modeli üzerinden yönetilir.
 
-## Teknolojiler
+## Ürün Özeti
 
-- **React Native** + **Expo SDK 50**
-- **TypeScript** (strict mode)
-- **Firebase Auth** — Kayıt, giriş, şifre sıfırlama
-- **Cloud Firestore** — Kullanıcı verileri, ilerleme, leaderboard
-- **React Navigation 6** — Auth flow + Bottom Tabs + Native Stack
-- **Context API** — Auth state + real-time Firestore sync
-- **Custom Hooks** — useAuth, useUser, useLesson
-- **Jest** — Unit & component testler
-- **ESLint + Prettier** — Kod kalitesi
+- Çok dilli öğrenme akışı: `English`, `Deutsch`, `Español`, `Türkçe`
+- CEFR tabanlı ilerleme: `A0` → `C2`
+- Placement test ile rota ve zorluk ayarı
+- Standard / Timed / Review / Boss ders modları
+- Speech recognition ile telaffuz pratikleri
+- Battle pass, chest ve booster odaklı gamification katmanı
+- Günlük görevler, streak, level progress ve lig sistemi
+- Weak words ve mistake notebook odaklı tekrar sistemi
+- Gerçek cihazda çalışan Expo development build akışı
 
-## Kurulum
+## Arayüz Galerisi
 
-```bash
-git clone https://github.com/KULLANICI_ADIN/LinguaLeap.git
-cd LinguaLeap
-npm install
-```
+Bu bölümdeki görseller repo içinde yer tutucu olarak eklendi. Gerçek ekran görüntülerini aynı dosya yollarına koyduğunda GitHub üzerinde doğrudan burada görünecekler.
 
-Firebase kurulumu için **FIREBASE_SETUP.md** dosyasını takip et. Sonra:
+### Ana Sayfa
 
-```bash
-npx expo start
-```
+![Home Dashboard](docs/screenshots/home-dashboard.svg)
 
-## Mimari
+Ana sayfa; günlük hedef, level ilerlemesi, battle pass teaser alanı, aktif kurslar ve görev kartlarını tek merkezde toplar. Kullanıcının o gün ne yapması gerektiğini doğrudan gösteren “command center” rolündedir.
 
-```
+### Öğrenme Yolu
+
+![Learn Path](docs/screenshots/learn-path.svg)
+
+Learn ekranı; öğrenilecek dili seçme, aktif CEFR seviyesini görüntüleme ve lesson path üzerinde bölüm bölüm ilerleme mantığını taşır. A0’dan başlayıp C2’ye kadar açılabilen bir rota sistemi vardır.
+
+### Oyun Modları
+
+![Learn Modes](docs/screenshots/learn-modes.svg)
+
+Learn ekranındaki mod şeridi yalnızca tek bir ders akışı sunmaz. Standard path’in yanında Timed, Review ve Boss modlarıyla aynı içerik farklı kurallarla tekrar oynanabilir hale gelir.
+
+### Mağaza ve Battle Pass
+
+![Shop Battle Pass](docs/screenshots/shop-battle-pass.svg)
+
+Mağaza ekranında battle pass ana merkez olarak konumlanır. Reward rail, premium lane, claim durumları, kalpler ve güçlendiriciler aynı görsel sistem altında toplanır.
+
+### Lig ve Sıralama
+
+![Leaderboard](docs/screenshots/leaderboard.svg)
+
+Leaderboard ekranı lig sistemi, haftalık sıralama ve toplam XP üzerinden kullanıcının diğer oyuncularla konumunu gösterir. Haftalık motivasyon katmanı burada kurulur.
+
+### Profil
+
+![Profile Overview](docs/screenshots/profile-overview.svg)
+
+Profil ekranı kullanıcı kartı, toplam XP, taçlar, lig durumu ve achievement alanlarını özetler. Avatar ve temel kullanıcı bilgileri burada yönetilir.
+
+### Weak Words ve Başarımlar
+
+![Profile Weak Words](docs/screenshots/profile-weak-words.svg)
+
+Weak words bölümü kullanıcının en çok zorlandığı kelimeleri ve yanlış/doğru oranlarını gösterir. Bu alan daha sonra mistake notebook ve spaced repetition sisteminin temelini oluşturur.
+
+## Uygulamada Şu Anda Neler Var?
+
+### 1. Öğrenme Sistemi
+
+- Placement assessment sonrası kullanıcıya uygun rota seçilir.
+- CEFR seviyeleri kilit/açık mantığıyla tutulur.
+- Her dil için ayrı lesson progress kaydı tutulur.
+- Her ders sonunda yıldız/crown mantığı yarım adımlarla hesaplanır.
+- Node unlock akışı kullanıcı ilerlemesine göre açılır.
+
+### 2. Soru Üretimi
+
+- Genişletilmiş kelime bankası
+- Ünite bazlı soru kümeleri
+- Tier bazlı bonus vocab
+- Yakın distractor cluster mantığı
+- Varyasyonlu prompt kalıpları
+- Aynı kelime ve aynı soru tipinin arka arkaya dönmesini azaltan freshness mantığı
+
+### 3. Telaffuz ve Speech
+
+- `expo-speech-recognition` ile native pronunciation flow
+- Doğru/yanlış telaffuz geri bildirimi
+- Basılı tut konuş etkileşimi
+- Değerlendirme state’i ve kısa flash bug fix’leri
+- Development build üzerinde gerçek cihaz testi için hazır yapı
+
+### 4. Gamification
+
+- Günlük hedef
+- Günlük seri
+- XP ve level sistemi
+- Reward chest
+- Battle pass
+- Booster ve shop item yapısı
+- Achievement sistemi
+- Haftalık leaderboard
+
+### 5. Tekrar ve Analiz
+
+- Weak words
+- Mistake bucket kayıtları
+- Notebook ekranı
+- Review mode temeli
+- Wrong/correct sayıları ile odak kelime takibi
+
+## Ekranlar ve Sorumlulukları
+
+### Home
+
+- Kullanıcıya o günün ana hedefini gösterir
+- Level ve XP progress’ini özetler
+- Aktif kursları listeler
+- Battle pass’e giriş noktası sağlar
+- Günlük görevleri tek yerde sunar
+
+### Learn
+
+- Dil seçimi
+- Placement ve CEFR kontrolü
+- Path progression
+- Lesson node yapısı
+- Timed / Review / Boss modları
+
+### Lesson
+
+- Translate
+- Select
+- Fill blank
+- Listen
+- Pronounce
+
+Bu ekran uygulamanın asıl “core loop” kısmıdır.
+
+### Shop
+
+- Battle pass yönetimi
+- Reward claim state’leri
+- Kalp doldurma
+- Booster satın alma
+- Premium / Super teaser alanı
+
+### Leaderboard
+
+- Lig görünümü
+- Haftalık ve genel sıralama
+- Kullanıcı pozisyonu
+- Yükselme / düşme bölgesi mantığı
+
+### Profile
+
+- Avatar ve hesap bilgileri
+- İstatistik kartları
+- Achievement grid
+- Weak words listesi
+- Yardım / ayarlar / çıkış alanı
+
+## Teknik Mimari
+
+```text
 src/
-├── config/firebase.ts       # Firebase bağlantısı
-├── context/AuthContext.tsx   # Auth state + Firestore sync
-├── services/firestore.ts    # Tüm veritabanı işlemleri
-├── hooks/index.ts           # useAuth, useUser, useLesson
-├── types/index.ts           # Merkezi tip tanımları
+├── components/
+│   ├── AppSymbol.tsx
+│   ├── LessonNode.tsx
+│   ├── ProgressBar.tsx
+│   ├── TopBar.tsx
+│   └── UnitHeader.tsx
+├── config/
+│   └── firebase.ts
+├── context/
+│   ├── AppContext.tsx
+│   ├── AuthContext.tsx
+│   └── LanguageContext.tsx
+├── data/
+│   ├── learningContent.ts
+│   └── mockData.ts
+├── hooks/
+│   └── index.ts
+├── i18n/
+│   └── translations.ts
 ├── navigation/
-│   └── RootNavigator.tsx    # Auth flow (login/register ↔ ana uygulama)
+│   └── RootNavigator.tsx
 ├── screens/
-│   ├── auth/                # Login, Register, ForgotPassword
+│   ├── auth/
 │   ├── HomeScreen.tsx
 │   ├── LearnScreen.tsx
 │   ├── LessonScreen.tsx
 │   ├── LeaderboardScreen.tsx
-│   ├── ShopScreen.tsx
-│   └── ProfileScreen.tsx
-├── components/              # Yeniden kullanılabilir bileşenler
-├── data/mockData.ts         # Ders içerikleri ve quiz soruları
-├── theme/colors.ts
-└── utils/helpers.ts
+│   ├── MistakesNotebookScreen.tsx
+│   ├── ProfileScreen.tsx
+│   └── ShopScreen.tsx
+├── services/
+│   └── firestore.ts
+├── theme/
+│   └── colors.ts
+└── types/
+    └── index.ts
 ```
 
-## Gerçek Zamanlı Özellikler
+## Temel Sistemler Nasıl Çalışıyor?
 
-- Kayıt olunca Firestore'da profil oluşur
-- XP kazanınca seviye, streak, haftalık grafik anlık güncellenir
-- Quiz bitince ders ilerlemesi ve taçlar kaydedilir
-- Leaderboard canlı güncellenir (onSnapshot)
-- Başarılar otomatik açılır (7 gün streak, 1000 XP vs.)
-- Can kaybetme, elmas harcama gerçek zamanlı
+### Auth ve Kullanıcı Profili
 
-## Komutlar
+- Firebase Auth ile kayıt / giriş / şifre sıfırlama yapılır.
+- İlk kayıt sonrası kullanıcı profili Firestore’da oluşturulur.
+- Profil içinde level, XP, streak, crowns, battle pass ve learn preferences tutulur.
+
+### Lesson Progress
+
+- Ders tamamlanınca score ve crown bilgisi kaydedilir.
+- İlerleme aktif hedef dil bazında da ayrı tutulur.
+- Sonraki node açılımı bu kayda göre hesaplanır.
+
+### Battle Pass
+
+- Battle pass level’i toplam battle pass XP ile hesaplanır.
+- Free ve premium reward lane mantığı vardır.
+- Reward claim işlemi profile yazılır.
+- Claimed / ready / locked durumları UI’da ayrı state’lerle gösterilir.
+
+### Question Generator
+
+- Soru üretimi `src/data/learningContent.ts` içinde çalışır.
+- Sistem şu girdilere göre soru üretir:
+  - hedef dil
+  - UI dili
+  - assessment tier
+  - learn mode
+  - zayıf kelimeler
+  - recent question geçmişi
+- Amaç aynı soruları tekrar tekrar döndürmeden, bağlama daha uygun ve birbirine yakın seçenekler üretmektir.
+
+### Weak Words / Mistake Tracking
+
+- Her soru outcome’u `correct / wrong` olarak işlenir.
+- Focus kelimeler kullanıcı profiline mistake bucket olarak yazılır.
+- Profile ve notebook ekranı bu veri üzerinden beslenir.
+
+## Veri Modeli
+
+Kullanıcı tarafında bugün aktif kullanılan ana bloklar:
+
+- `placement`
+- `battlePass`
+- `rewardChests`
+- `learnPreferences`
+- `lessonProgress`
+- `mistakeBuckets`
+- `completedLessons`
+
+Bu yapı sayesinde tek bir kullanıcı dokümanından ürünün büyük kısmı beslenebiliyor. Uzun vadede bu sistemin bazı parçalarının daha atomik koleksiyonlara ayrılması planlanıyor.
+
+## Geliştirme Ortamı
+
+### Gereksinimler
+
+- Node.js
+- npm
+- Xcode
+- iOS Simulator veya gerçek iPhone
+- Firebase projesi
+
+### Kurulum
 
 ```bash
-npm start              # Expo dev server
-npm test               # Jest testleri
-npm run lint           # ESLint kontrolü
-npm run format         # Prettier formatlama
-npm run type-check     # TypeScript kontrol
+git clone https://github.com/efeberktnci/LinguaLeap.git
+cd LinguaLeap
+npm install
 ```
 
-## Lisans
+Ardından:
 
-MIT
+```bash
+npm start
+```
+
+iOS simülatör:
+
+```bash
+npm run ios
+```
+
+Gerçek cihaz development build:
+
+```bash
+npm run ios:run:device
+```
+
+## Faydalı Komutlar
+
+```bash
+npm start
+npm run ios
+npm run ios:run:device
+npm run type-check
+npm test -- --runInBand
+npx expo export -p all --clear
+```
+
+## Son Büyük Çalışmalar
+
+- iPhone development build zinciri çalışır hale getirildi
+- Speech recognition akışı entegre edildi
+- Learn path ve CEFR progression geliştirildi
+- Battle pass / shop tasarımı büyütüldü
+- Weak words ve notebook sistemi eklendi
+- Question generator ciddi şekilde genişletildi
+- Profile, Home, Shop, Leaderboard ve Learn ekranları aynı ürün dili altında toparlandı
+
+## Sonraki Büyük Adımlar
+
+- Server-backed question bank
+- Mastery + spaced repetition engine
+- Secure reward ledger
+- Battle pass sezonlarının backend’den gelmesi
+- Story / conversation mode derinleştirmesi
+- Speech scoring v2
+
+## Screenshot Dosya Rehberi
+
+Gerçek ekran görüntülerini aşağıdaki dosya isimleriyle değiştirmen yeterli:
+
+- `docs/screenshots/home-dashboard.svg`
+- `docs/screenshots/learn-path.svg`
+- `docs/screenshots/learn-modes.svg`
+- `docs/screenshots/shop-battle-pass.svg`
+- `docs/screenshots/leaderboard.svg`
+- `docs/screenshots/profile-overview.svg`
+- `docs/screenshots/profile-weak-words.svg`
+
+İstersen bunları `.png` dosyalara çevirip README yollarını da aynı mantıkla güncelleyebilirsin.
+
+## Not
+
+Bu README, mevcut ürün akışını ve şu ana kadar yapılan geliştirmeleri düzenli şekilde belgelemek için hazırlanmıştır. Tasarım, oyunlaştırma ve öğrenme sistemi birlikte düşünülmüş; bu nedenle repo yalnızca kod deposu değil, doğrudan ürün dokümantasyonu da taşır.

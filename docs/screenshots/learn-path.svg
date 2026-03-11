@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" fill="none">
+  <rect width="1280" height="720" rx="40" fill="#F7FBF3"/>
+  <rect x="60" y="60" width="1160" height="600" rx="28" fill="#FFFFFF" stroke="#D9EBD8" stroke-width="4"/>
+  <text x="90" y="150" fill="#123126" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700">Learn Path Screenshot Slot</text>
+  <text x="90" y="220" fill="#4F6B5E" font-family="Arial, Helvetica, sans-serif" font-size="28">Replace this file with the real Learn path screen.</text>
+  <text x="90" y="280" fill="#4F6B5E" font-family="Arial, Helvetica, sans-serif" font-size="24">Expected content: target language chooser, CEFR selector, standard path nodes, unit card.</text>
+</svg>

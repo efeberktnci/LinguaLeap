@@ -14,20 +14,14 @@ import {
   getLearnModeCards,
   getPlacementAssessmentQuestions,
   getTierFromCefrLevel,
+  LEARN_LANGUAGE_OPTIONS,
 } from '../data/learningContent';
 import { LearnModeCard, LearnTargetLanguage } from '../data/learningContent';
 
 const DAILY_GOAL = 250;
 
-type LevelCardTheme = {
-  backgroundColor: string;
-  borderColor: string;
-  badgeColor: string;
-  progressColor: string;
-};
-
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { user, claimRewardChest } = useUser();
+  const { user, claimRewardChest, setLearnTargetLanguage } = useUser();
   const { refreshProfile } = useAuth();
   const { t, tx, language } = useLanguage();
 
@@ -63,50 +57,7 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const battlePassProgress = ((battlePass.xp % 120) || 0) / 120;
   const unclaimedChest = (user.rewardChests || []).find((chest: any) => !chest.claimed);
 
-  // Seviye görünümü: levele göre tema
   const level = user.level ?? 1;
-  let levelTheme: LevelCardTheme = {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.swan,
-    badgeColor: COLORS.secondary,
-    progressColor: COLORS.secondary,
-  };
-
-  if (level < 10) {
-    // Başlangıç: yeşil tonlar
-    levelTheme = {
-      backgroundColor: '#F1FBEA',
-      borderColor: COLORS.primaryBg,
-      badgeColor: COLORS.primary,
-      progressColor: COLORS.primary,
-    };
-  } else if (level < 30) {
-    // Orta: mavi tonlar
-    levelTheme = {
-      backgroundColor: '#E8F4FD',
-      borderColor: COLORS.blueLight,
-      badgeColor: COLORS.blue,
-      progressColor: COLORS.blue,
-    };
-  } else if (level < 60) {
-    // İleri: mor tonlar
-    levelTheme = {
-      backgroundColor: '#F5ECFF',
-      borderColor: COLORS.secondary,
-      badgeColor: COLORS.secondaryDark,
-      progressColor: COLORS.secondaryDark,
-    };
-  } else {
-    // Usta: kırmızı / elmas tonları
-    levelTheme = {
-      backgroundColor: '#FFF0F0',
-      borderColor: COLORS.redLight,
-      badgeColor: COLORS.red,
-      progressColor: COLORS.red,
-    };
-  }
-
-  // Tamamlanan ders sayısı
   const completedCount = (user.completedLessons || []).length;
   const targetLanguage = (user.learnPreferences?.learnTargetLanguage as LearnTargetLanguage) ?? (language === 'en' ? 'tr' : 'en');
   const placementTier = getTierFromCefrLevel((user.learnPreferences?.cefrLevel as any) ?? 'A0');
@@ -171,15 +122,22 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     },
   ];
 
-  // Aktif kurslar - gerçek veriden
-  const courses = (user.coursesActive || []).map((courseId: string) => {
-    if (courseId === 'en_tr') {
-      const totalLessons = 23; // toplam ders
-      const done = (user.completedLessons || []).length;
-      const progress = totalLessons > 0 ? Math.min(done / totalLessons, 1) : 0;
-      return { id: 'en', name: tx('Ingilizce'), flag: '\u{1F1EC}\u{1F1E7}', progress };
-    }
-    return { id: courseId, name: courseId, flag: '🌍', progress: 0 };
+  const languageLessonProgress = user.learnPreferences?.languageLessonProgress ?? { en: [], de: [], es: [], tr: [] };
+  const totalLessonsPerCourse = 35;
+  const courses = LEARN_LANGUAGE_OPTIONS.map((option) => {
+    const localizedName =
+      option.code === 'en' ? tx('Ingilizce') :
+      option.code === 'de' ? tx('Almanca') :
+      option.code === 'es' ? tx('Ispanyolca') :
+      tx('Turkce');
+    const done = languageLessonProgress[option.code]?.length ?? 0;
+    return {
+      id: option.code,
+      name: localizedName,
+      flag: option.flag,
+      progress: Math.min(done / totalLessonsPerCourse, 1),
+      active: targetLanguage === option.code,
+    };
   });
 
   const handlePlacementStart = () => {
@@ -248,26 +206,19 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
           <View style={styles.heroMainRow}>
             <View style={styles.greetingLeft}>
-              <Text style={styles.greeting}>{getLocalizedGreeting()}, {user.name}!</Text>
+              <Text style={styles.greeting}>{getLocalizedGreeting()} {user.name}</Text>
               <Text style={styles.greetingSub}>{tx('Derslerine devam edelim mi?')}</Text>
             </View>
             <View style={styles.avatarContainer}>
               <AppSymbol symbol={user.avatar} size={28} color={COLORS.blueDark} style={styles.avatar} />
             </View>
           </View>
-          <View style={styles.heroStatsRow}>
-            <View style={[styles.heroStatCard, styles.heroStatCardPrimary]}>
-              <Text style={styles.heroStatValue}>{completedCount}</Text>
-              <Text style={styles.heroStatLabel}>{tx('Tamamlanan')}</Text>
+          <View style={styles.levelInlineCard}>
+            <View style={styles.levelInlineHeader}>
+              <Text style={styles.levelInlineTitle}>{t('home.level')} {user.level}</Text>
+              <Text style={styles.levelInlineXP}>{user.currentXP}/{user.xpToNextLevel} XP</Text>
             </View>
-            <View style={[styles.heroStatCard, styles.heroStatCardCool]}>
-              <Text style={styles.heroStatValue}>{user.streak}</Text>
-              <Text style={styles.heroStatLabel}>{tx('Seri')}</Text>
-            </View>
-            <View style={[styles.heroStatCard, styles.heroStatCardWarm]}>
-              <Text style={styles.heroStatValue}>{user.level}</Text>
-              <Text style={styles.heroStatLabel}>{t('home.level')}</Text>
-            </View>
+            <ProgressBar progress={levelProgress} height={10} color={COLORS.blue} style={{ marginTop: 8 }} />
           </View>
         </View>
 
@@ -288,49 +239,36 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         )}
 
-        <View style={styles.streakCard}>
-          <View style={styles.streakLeft}>
-            <AppSymbol symbol="🔥" size={28} color={COLORS.accent} style={styles.streakFire} />
-            <View>
-              <Text style={styles.streakCount}>
-                {user.streak > 0 ? `${user.streak} ${tx('gunluk seri')}!` : tx('Seriyi baslat!')}
-              </Text>
-              <Text style={styles.streakSub}>
+        <View style={styles.goalCard}>
+          <View style={styles.goalTopRow}>
+            <View style={styles.goalMetric}>
+              <View style={styles.goalMetricHeader}>
+                <AppSymbol symbol="🔥" size={18} color={COLORS.white} />
+                <Text style={styles.goalMetricTitle}>{user.streak > 0 ? `${user.streak} ${tx('gunluk seri')}` : tx('Seriyi baslat!')}</Text>
+              </View>
+              <Text style={styles.goalMetricSub}>
                 {user.longestStreak > 0 ? `${tx('En uzun')}: ${user.longestStreak} ${tx('gun')}` : tx('Bugun ilk dersini tamamla')}
               </Text>
             </View>
+            <View style={styles.goalMetric}>
+              <View style={styles.goalMetricHeader}>
+                <AppSymbol symbol="🎯" size={18} color={COLORS.white} />
+                <Text style={styles.goalMetricTitle}>{t('home.dailyGoal')}</Text>
+              </View>
+              <Text style={styles.goalMetricSub}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
+            </View>
           </View>
+          <ProgressBar progress={dailyProgress} height={14} color={dailyGoalReached ? '#FFE082' : COLORS.white} style={{ marginTop: 12 }} />
+          {dailyGoalReached && <Text style={styles.goalCompleteWarm}>{tx('Gunluk hedefe ulastin!')}</Text>}
           <View style={styles.weekDots}>
             {(user.weeklyXP || []).map((day: any, index: number) => (
               <View key={index} style={styles.dayDot}>
-                <View style={[styles.dot, day.xp > 0 ? styles.dotActive : styles.dotInactive]}>
-                  {day.xp > 0 && <AppSymbol symbol="✓" size={10} color={COLORS.white} style={styles.dayCheckIcon} />}
+                <View style={[styles.dot, day.xp > 0 ? styles.dotWarmActive : styles.dotWarmInactive]}>
+                  {day.xp > 0 && <AppSymbol symbol="✓" size={10} color={COLORS.accentDark} style={styles.dayCheckIcon} />}
                 </View>
-                <Text style={styles.dayLabel}>{tx(day.day)}</Text>
+                <Text style={styles.dayLabelWarm}>{tx(day.day)}</Text>
               </View>
             ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('home.dailyGoal')}</Text>
-            <Text style={styles.sectionBadge}>{cappedDailyXP}/{DAILY_GOAL} XP</Text>
-          </View>
-          <ProgressBar progress={dailyProgress} height={16} color={dailyGoalReached ? '#FFD700' : COLORS.blue} style={{ marginTop: 8 }} />
-          {dailyGoalReached && <Text style={styles.goalComplete}>{tx('Gunluk hedefe ulastin!')}</Text>}
-        </View>
-
-        <View style={[styles.levelCard, { backgroundColor: levelTheme.backgroundColor, borderColor: levelTheme.borderColor }]}>
-          <View style={styles.levelRow}>
-            <View style={[styles.levelBadge, { backgroundColor: levelTheme.badgeColor }]}>
-              <Text style={styles.levelNumber}>{user.level}</Text>
-            </View>
-            <View style={styles.levelInfo}>
-              <Text style={styles.levelTitle}>{t('home.level')} {user.level}</Text>
-              <ProgressBar progress={levelProgress} height={10} color={levelTheme.progressColor} style={{ marginTop: 4 }} />
-              <Text style={styles.levelXP}>{user.currentXP} / {user.xpToNextLevel} XP</Text>
-            </View>
           </View>
         </View>
 
@@ -375,16 +313,23 @@ const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('home.activeCourses')}</Text>
-          <View style={styles.coursesRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.coursesRow}>
             {courses.map((course: any) => (
-              <TouchableOpacity key={course.id} style={styles.courseCard} onPress={() => navigation.navigate('Learn')}>
+              <TouchableOpacity
+                key={course.id}
+                style={[styles.courseCard, course.active && styles.courseCardActive]}
+                onPress={async () => {
+                  await setLearnTargetLanguage?.(course.id);
+                  navigation.navigate('Learn');
+                }}
+              >
                 <AppSymbol symbol={course.flag} size={24} color={COLORS.blueDark} style={styles.courseFlag} />
                 <Text style={styles.courseName}>{course.name}</Text>
                 <ProgressBar progress={course.progress} height={6} color={COLORS.primary} showShadow={false} style={{ marginTop: 8, width: '100%' }} />
                 <Text style={styles.coursePercent}>{Math.round(course.progress * 100)}%</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={styles.section}>
@@ -459,43 +404,50 @@ const styles = StyleSheet.create({
   heroBadgeText: { fontSize: 12, color: COLORS.blueDark, ...FONTS.bold },
   heroMainRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   greetingLeft: { flex: 1 },
-  greeting: { fontSize: 18, color: COLORS.ink, ...FONTS.bold, lineHeight: 24 },
+  greeting: { fontSize: 22, color: COLORS.ink, ...FONTS.bold, lineHeight: 28 },
   greetingSub: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 3, maxWidth: '92%' },
   avatarContainer: { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primaryBg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.mintLine },
   avatar: { fontSize: 28 },
-  heroStatsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  heroStatCard: { flex: 1, borderRadius: UI.radius.md, paddingVertical: 10, paddingHorizontal: 10, borderWidth: 1 },
-  heroStatCardPrimary: { backgroundColor: COLORS.primarySoft, borderColor: COLORS.mintLine },
-  heroStatCardCool: { backgroundColor: COLORS.bgPanelAlt, borderColor: COLORS.skyLine },
-  heroStatCardWarm: { backgroundColor: COLORS.accentSoft, borderColor: '#F4D6A2' },
-  heroStatValue: { fontSize: 18, color: COLORS.ink, ...FONTS.bold },
-  heroStatLabel: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 3 },
-  streakCard: { backgroundColor: UI.card.warm.backgroundColor, borderRadius: UI.radius.lg, padding: 18, marginBottom: 16, borderWidth: 1, borderColor: UI.card.warm.borderColor },
-  streakLeft: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
-  streakFire: { fontSize: 36 },
-  streakCount: { fontSize: 22, color: COLORS.ink, ...FONTS.bold },
-  streakSub: { fontSize: 13, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 2 },
-  weekDots: { flexDirection: 'row', justifyContent: 'space-around' },
+  levelInlineCard: {
+    marginTop: 14,
+    backgroundColor: COLORS.bgPanelAlt,
+    borderRadius: UI.radius.md,
+    borderWidth: 1,
+    borderColor: COLORS.skyLine,
+    padding: 12,
+  },
+  levelInlineHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  levelInlineTitle: { fontSize: 14, color: COLORS.ink, ...FONTS.bold },
+  levelInlineXP: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.semiBold },
+  goalCard: {
+    backgroundColor: '#E78A1C',
+    borderRadius: UI.radius.lg,
+    padding: 16,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#C96D00',
+    ...SHADOWS.medium,
+  },
+  goalTopRow: { flexDirection: 'row', gap: 12 },
+  goalMetric: { flex: 1 },
+  goalMetricHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  goalMetricTitle: { fontSize: 13, color: COLORS.white, ...FONTS.bold },
+  goalMetricSub: { fontSize: 12, color: 'rgba(255,255,255,0.88)', ...FONTS.medium, marginTop: 4, lineHeight: 16 },
+  weekDots: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 14 },
   dayDot: { alignItems: 'center', gap: 4 },
   dot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dotActive: { backgroundColor: COLORS.accent },
-  dotInactive: { backgroundColor: '#E6E2DB' },
+  dotWarmActive: { backgroundColor: '#FFE4B2' },
+  dotWarmInactive: { backgroundColor: 'rgba(255,255,255,0.22)' },
   dayCheckIcon: { fontSize: 10 },
-  dayLabel: { fontSize: 11, color: COLORS.inkSoft, ...FONTS.medium },
+  dayLabelWarm: { fontSize: 11, color: 'rgba(255,255,255,0.86)', ...FONTS.medium },
   section: { marginBottom: 22 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 18, color: COLORS.ink, ...FONTS.bold, marginBottom: 12 },
   sectionBadge: { fontSize: 14, color: COLORS.ink, ...FONTS.bold, marginBottom: 12 },
-  goalComplete: { fontSize: 14, color: COLORS.primaryDark, ...FONTS.semiBold, marginTop: 8, textAlign: 'center' },
-  levelCard: { backgroundColor: COLORS.bgPanel, borderRadius: UI.radius.md, padding: 18, marginBottom: 18, borderWidth: 1, borderColor: COLORS.mintLine },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  levelBadge: { width: 54, height: 54, borderRadius: 27, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center' },
-  levelNumber: { fontSize: 20, color: COLORS.white, ...FONTS.bold },
-  levelInfo: { flex: 1, gap: 2 },
-  levelTitle: { fontSize: 16, color: COLORS.ink, ...FONTS.bold },
-  levelXP: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.regular, marginTop: 4 },
-  coursesRow: { flexDirection: 'row', gap: 12 },
-  courseCard: { flex: 1, backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: COLORS.skyLine },
+  goalCompleteWarm: { fontSize: 12, color: COLORS.white, ...FONTS.bold, marginTop: 10, textAlign: 'center' },
+  coursesRow: { paddingRight: 8 },
+  courseCard: { width: 134, marginRight: 12, backgroundColor: COLORS.bgPanelAlt, borderRadius: UI.radius.md, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.skyLine },
+  courseCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
   courseFlag: { fontSize: 28, color: COLORS.blueDark, ...FONTS.bold },
   courseName: { fontSize: 14, color: COLORS.ink, ...FONTS.semiBold, marginTop: 6 },
   coursePercent: { fontSize: 12, color: COLORS.inkSoft, ...FONTS.medium, marginTop: 4 },
