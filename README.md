@@ -1,4 +1,4 @@
-# LinguaLeap    ![24d63e19-f406-4cb5-b1be-8cac00136f24](https://github.com/user-attachments/assets/0aa7adc8-3a3a-4868-b7ec-abed00e51b31)
+ ![24d63e19-f406-4cb5-b1be-8cac00136f24](https://github.com/user-attachments/assets/0aa7adc8-3a3a-4868-b7ec-abed00e51b31)
 
 
 LinguaLeap, oyunlaştırılmış dil öğrenme deneyimini modern mobil ürün diliyle birleştiren bir React Native / Expo uygulaması. Uygulama; gerçek kullanıcı hesabı, seviye sistemi, battle pass, günlük hedefler, lig tablosu, weak words takibi, placement assessment ve telaffuz odaklı ders akışlarıyla birlikte çalışır.
