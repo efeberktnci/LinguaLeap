@@ -21,44 +21,42 @@ Bu repo şu anda yalnızca bir demo arayüz değil. Kullanıcı profili, lesson 
 Bu bölümdeki görseller repo içinde yer tutucu olarak eklendi. Gerçek ekran görüntülerini aynı dosya yollarına koyduğunda GitHub üzerinde doğrudan burada görünecekler.
 
 ### Ana Sayfa
+![Home1](https://github.com/user-attachments/assets/06cb228a-74d4-4a0d-9b8c-f7ecd10d26d7)
+![home3](https://github.com/user-attachments/assets/cde79dc9-7770-40b2-b0f6-17ca6ef537c2)
 
-![Home Dashboard](docs/screenshots/home-dashboard.svg)
+
 
 Ana sayfa; günlük hedef, level ilerlemesi, battle pass teaser alanı, aktif kurslar ve görev kartlarını tek merkezde toplar. Kullanıcının o gün ne yapması gerektiğini doğrudan gösteren “command center” rolündedir.
 
 ### Öğrenme Yolu
+![öğren1](https://github.com/user-attachments/assets/16ccba83-34f0-40a8-a966-271f195391df)
+![öğren2](https://github.com/user-attachments/assets/c8f24c71-1c84-4ca8-ae16-230c3d74eabb)
 
-![Learn Path](docs/screenshots/learn-path.svg)
+
 
 Learn ekranı; öğrenilecek dili seçme, aktif CEFR seviyesini görüntüleme ve lesson path üzerinde bölüm bölüm ilerleme mantığını taşır. A0’dan başlayıp C2’ye kadar açılabilen bir rota sistemi vardır.
 
-### Oyun Modları
+### Mağaza 
+![mağaza1](https://github.com/user-attachments/assets/39d33adc-da39-4475-b5c8-e8a7bc9ad8e2)
+![mağaza2](https://github.com/user-attachments/assets/ad3ff2f6-9a82-4aed-9997-5b6481c29d4e)
 
-![Learn Modes](docs/screenshots/learn-modes.svg)
 
-Learn ekranındaki mod şeridi yalnızca tek bir ders akışı sunmaz. Standard path’in yanında Timed, Review ve Boss modlarıyla aynı içerik farklı kurallarla tekrar oynanabilir hale gelir.
-
-### Mağaza ve Battle Pass
-
-![Shop Battle Pass](docs/screenshots/shop-battle-pass.svg)
 
 Mağaza ekranında battle pass ana merkez olarak konumlanır. Reward rail, premium lane, claim durumları, kalpler ve güçlendiriciler aynı görsel sistem altında toplanır.
 
 ### Lig ve Sıralama
+![Leaderboard1](https://github.com/user-attachments/assets/446d6749-ac63-4124-95bb-4732cc49f4d0)
 
-![Leaderboard](docs/screenshots/leaderboard.svg)
 
 Leaderboard ekranı lig sistemi, haftalık sıralama ve toplam XP üzerinden kullanıcının diğer oyuncularla konumunu gösterir. Haftalık motivasyon katmanı burada kurulur.
 
 ### Profil
 
-![Profile Overview](docs/screenshots/profile-overview.svg)
+![profil1](https://github.com/user-attachments/assets/41ee6a55-8d23-4c58-b7e8-01301b695416)
 
 Profil ekranı kullanıcı kartı, toplam XP, taçlar, lig durumu ve achievement alanlarını özetler. Avatar ve temel kullanıcı bilgileri burada yönetilir.
 
 ### Weak Words ve Başarımlar
-
-![Profile Weak Words](docs/screenshots/profile-weak-words.svg)
 
 Weak words bölümü kullanıcının en çok zorlandığı kelimeleri ve yanlış/doğru oranlarını gösterir. Bu alan daha sonra mistake notebook ve spaced repetition sisteminin temelini oluşturur.
 
