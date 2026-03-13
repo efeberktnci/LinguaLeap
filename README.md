@@ -55,9 +55,6 @@ Leaderboard ekranı lig sistemi, haftalık sıralama ve toplam XP üzerinden kul
 
 Profil ekranı kullanıcı kartı, toplam XP, taçlar, lig durumu ve achievement alanlarını özetler. Avatar ve temel kullanıcı bilgileri burada yönetilir.
 
-### Weak Words ve Başarımlar
-
-Weak words bölümü kullanıcının en çok zorlandığı kelimeleri ve yanlış/doğru oranlarını gösterir. Bu alan daha sonra mistake notebook ve spaced repetition sisteminin temelini oluşturur.
 
 ## Uygulamada Şu Anda Neler Var?
 
